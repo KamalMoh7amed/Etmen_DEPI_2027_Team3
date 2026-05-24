@@ -1,213 +1,224 @@
-# Etmen DEPI Project — Implementation Task Board
+# 📋 Etmen DEPI Project — Task Distribution Board
 
-> **Context:** All interfaces, DTOs, entities, DAL configurations, migrations, and the UoW are already done.
-> Every stub file throws `NotImplementedException` and has a `// TODO` comment explaining exactly what to write.
-> **Do not touch the front-end (Views) for now — focus on back-end implementation only.**
-
----
-
-## 🗂️ How to work
-
-1. Pull the latest code from the repo.
-2. Find your tasks below, open the stub file, read the `// TODO` comments carefully.
-3. Replace each `throw new NotImplementedException();` with real code.
-4. Build and run — the project should compile as-is (stubs throw at runtime, not compile time).
-5. Write at least one manual test or unit test for each method before pushing.
-6. Open a PR per task group and tag your reviewer.
+> **Project:** Etmen Health Platform  
+> **Team:** 5 Members  
+> **Focus:** Backend Implementation Only (BLL Services + DAL Repositories + PL Controllers)  
+> **Date:** 2026  
 
 ---
 
-## 👤 Member 1 — Auth & Patient Profile
+## 👥 Team Members & Skill Levels
 
-**Services (BLL):**
-
-| File | Methods to implement |
-|------|----------------------|
-| `Etmen_BLL/Repositories/Services/AuthService.cs` | `RegisterAsync`, `LoginAsync`, `VerifyEmailAsync`, `ForgotPasswordAsync`, `ResetPasswordAsync`, `DeactivateAccountAsync`, `IsEmailTakenAsync` |
-| `Etmen_BLL/Repositories/Services/PatientService.cs` | `GetProfileAsync`, `UpdateProfileAsync`, `GetDashboardAsync` |
-
-**Controller (PL):**
-
-| File | Actions to implement |
-|------|----------------------|
-| `Etmen_PL/Controllers/AccountController.cs` | All actions: `Register`, `Login`, `Logout`, `VerifyEmail`, `ForgotPassword`, `ResetPassword` |
-| `Etmen_PL/Controllers/PatientController.cs` | `Dashboard`, `Profile` (GET + POST) |
-
-**DAL Repositories:**
-
-| File | All methods |
-|------|-------------|
-| `Etmen_DAL/Repositories/Implementations/PatientProfileRepository.cs` | All 7 methods |
-
-**Notes:**
-- Use `UserManager<ApplicationUser>` and `SignInManager` injected via DI for auth operations.
-- JWT token generation goes in `AuthService.LoginAsync` — store signing key in `appsettings.json`.
-- `GetDashboardAsync` should aggregate data from at least: upcoming appointments, latest risk, unread alerts.
+| # | Name | Skill Level | Role |
+|---|------|-------------|------|
+| 1 | **كمال محمد صابر** | ⭐⭐⭐⭐⭐ Expert | 🎯 Team Lead + Complex Tasks |
+| 2 | **بهنساوي** | ⭐⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
+| 3 | **عبد الحميد** | ⭐⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
+| 4 | كريم | ⭐⭐⭐ Intermediate | Standard Tasks |
+| 5 | عبدالرحمن | ⭐⭐⭐ Intermediate | Foundation Tasks |
 
 ---
 
-## 👤 Member 2 — Doctor & Appointments
+## 🗂️ Task Distribution (By Complexity)
 
-**Services (BLL):**
+### 👤 كمال محمد صابر — Group 5: AI Chat, Notifications, Family & Admin ⚡🧠
+> **Highest Complexity** — External APIs, Background Jobs, Role Management
 
-| File | Methods to implement |
-|------|----------------------|
-| `Etmen_BLL/Repositories/Services/DoctorService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/AppointmentService.cs` | All methods |
+#### 📁 Services (BLL)
+| File | Methods | Complexity |
+|------|---------|------------|
+| `AlertService.cs` | All methods (8) | 🟡 Medium |
+| `NotificationService.cs` | All methods (7) + Background Job | 🟡 Medium |
+| `FamilyService.cs` | All methods (7) + Token Generation | 🔴 High |
+| `AIChatService.cs` | All methods (6) + External LLM API | 🔴🔴 Very High |
+| `AdminService.cs` | All methods + Role Authorization | 🟡 Medium |
 
-**Controller (PL):**
+#### 🎮 Controllers (PL)
+| File | Actions |
+|------|---------|
+| `ChatController.cs` | `Index`, `Send`, `ClearHistory` |
+| `PatientController.cs` | `Alerts` |
 
-| File | Actions to implement |
-|------|----------------------|
-| `Etmen_PL/Controllers/DoctorController.cs` | All actions |
-| `Etmen_PL/Controllers/PatientController.cs` | `Appointments`, `CancelAppointment` |
+#### 🗄️ DAL Repositories
+| File | Methods Count |
+|------|--------------|
+| `AlertRepository.cs` | 8 |
+| `NotificationRepository.cs` | 7 |
+| `FamilyLinkRepository.cs` | 7 |
+| `ChatMessageRepository.cs` | 6 |
 
-**DAL Repositories:**
-
-| File | All methods |
-|------|-------------|
-| `Etmen_DAL/Repositories/Implementations/DoctorProfileRepository.cs` | All 6 methods |
-| `Etmen_DAL/Repositories/Implementations/AppointmentRepository.cs` | All 8 methods |
-| `Etmen_DAL/Repositories/Implementations/AvailableSlotRepository.cs` | All 6 methods |
-
-**Notes:**
-- `BookAppointmentAsync` must be transactional: check slot availability, create Appointment, mark slot booked — wrap in `BeginTransactionAsync/CommitTransactionAsync`.
-- `BulkAddSlotsAsync` in DoctorService should generate slots from a start/end date range + time intervals.
-- Use `[Authorize(Roles = "Doctor")]` on all DoctorController actions.
-
----
-
-## 👤 Member 3 — Medical Records, Lab Results & Risk Engine
-
-**Services (BLL):**
-
-| File | Methods to implement |
-|------|----------------------|
-| `Etmen_BLL/Repositories/Services/MedicalRecordService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/LabService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/RiskService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/PatientService.cs` | `GetMedicalRecordsAsync`, `GetLatestMedicalRecordAsync`, `AddMedicalRecordAsync`, `AssessRiskAsync`, `GetLatestRiskAssessmentAsync`, `GetRiskHistoryAsync` |
-
-**Controller (PL):**
-
-| File | Actions to implement |
-|------|----------------------|
-| `Etmen_PL/Controllers/PatientController.cs` | `MedicalRecords`, `AddMedicalRecord`, `RiskAssessment` (GET+POST), `RiskResult`, `LabResults` |
-
-**DAL Repositories:**
-
-| File | All methods |
-|------|-------------|
-| `Etmen_DAL/Repositories/Implementations/MedicalRecordRepository.cs` | All 5 methods |
-| `Etmen_DAL/Repositories/Implementations/LabResultRepository.cs` | All 7 methods |
-| `Etmen_DAL/Repositories/Implementations/RiskAssessmentRepository.cs` | All 7 methods |
-
-**Notes:**
-- `RiskCalculatorHelper` (already in `Etmen_BLL/Helpers/`) has the scoring logic — use it in `RiskService.CalculateRiskAsync`.
-- `BmiHelper` is also ready — use it when creating medical records to auto-compute BMI.
-- Lab file upload: store the file in `wwwroot/uploads/labs/` and save the path in the entity; OCR is optional/bonus.
+> 🔑 **Key Challenges for كمال:**
+> - `AIChatService`: Integrate external LLM API with conversation context (last 10 messages)
+> - `FamilyService`: Generate secure `Guid` invite tokens + send via `INotificationService`
+> - `NotificationService`: Wire `ClearExpiredNotificationsAsync` with `IHostedService`
+> - Admin role enforcement with `[Authorize(Roles = "Admin")]`
+> - Manage `appsettings.json` for API keys and background job configs
 
 ---
 
-## 👤 Member 4 — Crisis, Emergency & Nearby
+### 👤 بهنساوي — Group 4: Crisis, Emergency & Geo Services 🚨🌍
+> **High Complexity** — Geospatial logic, crisis state management, emergency routing
 
-**Services (BLL):**
+#### 📁 Services (BLL)
+| File | Methods |
+|------|---------|
+| `CrisisService.cs` | All methods |
+| `CrisisRiskEngineService.cs` | All methods |
+| `EmergencyService.cs` | All methods |
+| `NearbyService.cs` | All methods |
 
-| File | Methods to implement |
-|------|----------------------|
-| `Etmen_BLL/Repositories/Services/CrisisService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/CrisisRiskEngineService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/EmergencyService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/NearbyService.cs` | All methods |
+#### 🎮 Controllers (PL)
+| File | Actions |
+|------|---------|
+| `PatientController.cs` | `Nearby` |
 
-**Controller (PL):**
+#### 🗄️ DAL Repositories
+| File | Methods Count |
+|------|--------------|
+| `CrisisConfigurationRepository.cs` | 9 |
+| `OutbreakZoneRepository.cs` | 6 |
+| `EmergencyRequestRepository.cs` | 10 |
+| `HealthcareProviderRepository.cs` | 6 |
 
-| File | Actions to implement |
-|------|----------------------|
-| `Etmen_PL/Controllers/PatientController.cs` | `Nearby` |
-
-**DAL Repositories:**
-
-| File | All methods |
-|------|-------------|
-| `Etmen_DAL/Repositories/Implementations/CrisisConfigurationRepository.cs` | All 9 methods |
-| `Etmen_DAL/Repositories/Implementations/OutbreakZoneRepository.cs` | All 6 methods |
-| `Etmen_DAL/Repositories/Implementations/EmergencyRequestRepository.cs` | All 10 methods |
-| `Etmen_DAL/Repositories/Implementations/HealthcareProviderRepository.cs` | All 6 methods |
-
-**Notes:**
-- `GeoHelper` in `Etmen_DAL/Helpers/GeoHelper.cs` already provides Haversine distance — use it in nearby/outbreak zone queries.
-- `CrisisRiskEngineService.CalculateCrisisRiskAsync` must load SymptomWeights from the active crisis and score the patient's reported symptoms.
-- Only one crisis can be active at a time — enforce this in `ActivateCrisisAsync`.
-- `EmergencyService.CreateEmergencyRequestAsync` should auto-find the nearest available provider.
+> 🔑 **Key Implementation Notes:**
+> - Use `GeoHelper.HaversineDistance()` for all location-based queries
+> - Enforce single active crisis in `ActivateCrisisAsync` (check + deactivate others)
+> - `EmergencyService.CreateEmergencyRequestAsync`: Auto-find nearest available provider using geo-sorting
+> - Crisis risk scoring: Load `SymptomWeights` from active crisis entity
 
 ---
 
-## 👤 Member 5 — Alerts, Notifications, Family & AI Chat + Admin
+### 👤 عبد الحميد — Group 3: Medical Records, Labs & Risk Engine 🏥🧬
+> **High Complexity** — Business logic, file handling, risk calculations
 
-**Services (BLL):**
+#### 📁 Services (BLL)
+| File | Methods |
+|------|---------|
+| `MedicalRecordService.cs` | All methods |
+| `LabService.cs` | All methods + File Upload |
+| `RiskService.cs` | All methods |
+| `PatientService.cs` | 6 additional methods |
 
-| File | Methods to implement |
-|------|----------------------|
-| `Etmen_BLL/Repositories/Services/AlertService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/NotificationService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/FamilyService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/AIChatService.cs` | All methods |
-| `Etmen_BLL/Repositories/Services/AdminService.cs` | All methods |
+#### 🎮 Controllers (PL)
+| File | Actions |
+|------|---------|
+| `PatientController.cs` | `MedicalRecords`, `AddMedicalRecord`, `RiskAssessment` (GET+POST), `RiskResult`, `LabResults` |
 
-**Controller (PL):**
+#### 🗄️ DAL Repositories
+| File | Methods Count |
+|------|--------------|
+| `MedicalRecordRepository.cs` | 5 |
+| `LabResultRepository.cs` | 7 |
+| `RiskAssessmentRepository.cs` | 7 |
 
-| File | Actions to implement |
-|------|----------------------|
-| `Etmen_PL/Controllers/ChatController.cs` | `Index`, `Send`, `ClearHistory` |
-| `Etmen_PL/Controllers/PatientController.cs` | `Alerts` |
-
-**DAL Repositories:**
-
-| File | All methods |
-|------|-------------|
-| `Etmen_DAL/Repositories/Implementations/AlertRepository.cs` | All 8 methods |
-| `Etmen_DAL/Repositories/Implementations/NotificationRepository.cs` | All 7 methods |
-| `Etmen_DAL/Repositories/Implementations/FamilyLinkRepository.cs` | All 7 methods |
-| `Etmen_DAL/Repositories/Implementations/ChatMessageRepository.cs` | All 6 methods |
-
-**Notes:**
-- `AIChatService.SendMessageAsync` calls an external LLM API (configure base URL + key in `appsettings.json`); include the user's last 10 messages as conversation context.
-- `FamilyService.InviteFamilyMemberAsync` should generate a `Guid.NewGuid().ToString()` token, save it, and send it via `INotificationService`.
-- Admin actions (`AdminService`) require `[Authorize(Roles = "Admin")]` — add an `AdminController` or extend `HomeController` as needed.
-- `NotificationService.ClearExpiredNotificationsAsync` can be triggered by a background job (e.g., `IHostedService`) — wire it up in `Program.cs`.
+> 🔑 **Key Implementation Notes:**
+> - Use `RiskCalculatorHelper.CalculateScore()` in `RiskService.CalculateRiskAsync`
+> - Use `BmiHelper.Calculate()` when creating medical records
+> - Lab file upload: Save to `wwwroot/uploads/labs/`, store relative path in entity
+> - OCR for lab files is optional/bonus feature
 
 ---
 
-## 🔧 Shared setup checklist (all members)
+### 👤 كريم — Group 2: Doctors & Appointments 🩺📅
+> **Medium Complexity** — Transactional logic, slot management
 
-- [ ] Register your service + its interface in `Program.cs` with the correct lifetime (`AddScoped` for services and repositories).
-- [ ] Make sure AutoMapper profiles in `Etmen_BLL/Mapping/BLLMappingProfile.cs` include mappings for your DTOs — add any missing ones.
-- [ ] Do **not** change interfaces, DTOs, or entity classes — only implement the stubs.
-- [ ] Run `dotnet build` before every push to catch compile errors early.
+#### 📁 Services (BLL)
+| File | Methods |
+|------|---------|
+| `DoctorService.cs` | All methods |
+| `AppointmentService.cs` | All methods |
+
+#### 🎮 Controllers (PL)
+| File | Actions |
+|------|---------|
+| `DoctorController.cs` | All actions |
+| `PatientController.cs` | `Appointments`, `CancelAppointment` |
+
+#### 🗄️ DAL Repositories
+| File | Methods Count |
+|------|--------------|
+| `DoctorProfileRepository.cs` | 6 |
+| `AppointmentRepository.cs` | 8 |
+| `AvailableSlotRepository.cs` | 6 |
+
+> ⚠️ **Critical Requirement:**
+> - `BookAppointmentAsync` MUST be transactional:
+>   ```csharp
+>   using var transaction = await _unitOfWork.BeginTransactionAsync();
+>   try {
+>       // Check slot → Create Appointment → Mark slot booked
+>       await _unitOfWork.CommitTransactionAsync();
+>   } catch {
+>       await _unitOfWork.RollbackTransactionAsync();
+>       throw;
+>   }
+>   ```
+> - `BulkAddSlotsAsync`: Generate slots from date range + time intervals (e.g., every 30 mins)
+> - Apply `[Authorize(Roles = "Doctor")]` on all `DoctorController` actions
 
 ---
 
-## 📋 Quick reference — project structure
+### 👤 عبدالرحمن — Group 1: Auth & Patient Profile 🔐👤
+> **Foundation Level** — Ideal for onboarding and understanding project structure
 
-```
-Etmen_Domain/          → Entities & Enums (READ ONLY)
-Etmen_DAL/
-  Configurations/      → EF configs (READ ONLY)
-  DbContext/           → EtmenDbContext (READ ONLY)
-  Migrations/          → Migrations (READ ONLY)
-  Repositories/
-    Interfaces/        → DAL contracts (READ ONLY)
-    Implementations/   → ← YOUR WORK (DAL stubs)
-Etmen_BLL/
-  DTOs/                → Data transfer objects (READ ONLY)
-  Helpers/             → ServiceResult, BmiHelper, RiskCalculatorHelper (READ ONLY)
-  Mapping/             → AutoMapper profile (extend if needed)
-  Repositories/
-    IServices/         → BLL contracts (READ ONLY)
-    Services/          → ← YOUR WORK (BLL stubs)
-Etmen_PL/
-  Controllers/         → ← YOUR WORK (controller stubs)
-  Views/               → ← FRONT-END (skip for now, stubs provided)
-  Program.cs           → DI registration (all members update this)
-```
+#### 📁 Services (BLL)
+| File | Methods |
+|------|---------|
+| `AuthService.cs` | `RegisterAsync`, `LoginAsync`, `VerifyEmailAsync`, `ForgotPasswordAsync`, `ResetPasswordAsync`, `DeactivateAccountAsync`, `IsEmailTakenAsync` |
+| `PatientService.cs` | `GetProfileAsync`, `UpdateProfileAsync`, `GetDashboardAsync` |
+
+#### 🎮 Controllers (PL)
+| File | Actions |
+|------|---------|
+| `AccountController.cs` | `Register`, `Login`, `Logout`, `VerifyEmail`, `ForgotPassword`, `ResetPassword` |
+| `PatientController.cs` | `Dashboard`, `Profile` (GET + POST) |
+
+#### 🗄️ DAL Repositories
+| File | Methods Count |
+|------|--------------|
+| `PatientProfileRepository.cs` | 7 |
+
+> 💡 **Implementation Tips:**
+> - Use injected `UserManager<ApplicationUser>` and `SignInManager` for auth operations
+> - JWT token generation in `AuthService.LoginAsync`: read signing key from `appsettings.json`
+> - `GetDashboardAsync`: Aggregate upcoming appointments + latest risk assessment + unread alerts count
+> - Email confirmation tokens: use `UserManager.GenerateEmailConfirmationTokenAsync()`
+
+---
+
+## ✅ Shared Checklist (All Members)
+
+```markdown
+## Before Starting
+- [ ] Pull latest code from main branch
+- [ ] Read all `// TODO` comments in your assigned stub files carefully
+
+## During Implementation
+- [ ] Replace `throw new NotImplementedException();` with real logic
+- [ ] Register your service interface + implementation in `Program.cs` using `AddScoped`
+- [ ] Verify AutoMapper mappings in `BLLMappingProfile.cs` include your DTOs
+- [ ] Do NOT modify interfaces, DTOs, entities, or EF configurations — implement stubs only
+
+## Before Pushing
+- [ ] Run `dotnet build` — ensure zero compile errors
+- [ ] Write at least one manual test OR unit test per implemented method
+- [ ] Test edge cases: null inputs, unauthorized access, duplicate data
+- [ ] Add XML comments for public methods (optional but recommended)
+
+## PR Process
+- [ ] Open one PR per task group (e.g., "feat: implement Group 3 - Medical Records")
+- [ ] Tag @كمال محمد صابر for code review
+- [ ] Address review comments before merge
+- [ ] Update this board after PR merge ✅
+
+graph TD
+    A[📥 Pull latest code] --> B[📖 Read // TODO comments]
+    B --> C[✍️ Implement stub methods]
+    C --> D[🔨 dotnet build + manual test]
+    D --> E[🧪 Write unit tests if possible]
+    E --> F[🚀 Open PR + tag reviewer]
+    F --> G[👀 Code review by كمال]
+    G --> H{Approved?}
+    H -->|Yes| I[✅ Merge to main]
+    H -->|No| J[🔧 Fix + re-request review]
+    J --> G
