@@ -185,7 +185,18 @@
 > - Email confirmation tokens: use `UserManager.GenerateEmailConfirmationTokenAsync()`
 
 ---
-
+graph TD
+    A[📥 Pull latest code] --> B[📖 Read // TODO comments]
+    B --> C[✍️ Implement stub methods]
+    C --> D[🔨 dotnet build + manual test]
+    D --> E[🧪 Write unit tests if possible]
+    E --> F[🚀 Open PR + tag reviewer]
+    F --> G[👀 Code review by كمال]
+    G --> H{Approved?}
+    H -->|Yes| I[✅ Merge to main]
+    H -->|No| J[🔧 Fix + re-request review]
+    J --> G
+    
 ## ✅ Shared Checklist (All Members)
 
 ```markdown
