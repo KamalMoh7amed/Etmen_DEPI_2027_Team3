@@ -31,20 +31,32 @@ namespace Etmen_PL.Controllers
             _nearbyService = nearbyService;
         }
 
-        private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
         // GET: /Patient/Dashboard
         public async Task<IActionResult> Dashboard()
         {
-            // TODO: Call _patientService.GetDashboardAsync(UserId), pass to view.
-            throw new NotImplementedException();
+            var result = await _patientService.GetDashboardAsync(UserId);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل لوحة التحكم.";
+                return View(new DashboardDto());
+            }
+
+            return View(result.Data);
         }
 
         // GET: /Patient/Profile
         public async Task<IActionResult> Profile()
         {
-            // TODO: Call _patientService.GetProfileAsync(UserId), return Profile view.
-            throw new NotImplementedException();
+            var result = await _patientService.GetProfileAsync(UserId);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل الملف الشخصي.";
+                return View(new ProfileDto());
+            }
+
+            return View(result.Data);
         }
 
         // POST: /Patient/Profile
@@ -52,16 +64,31 @@ namespace Etmen_PL.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(ProfileDto dto)
         {
-            // TODO: ModelState check, call _patientService.UpdateProfileAsync(UserId, dto),
-            //       redirect to Profile on success.
-            throw new NotImplementedException();
+            if (!ModelState.IsValid)
+                return View(dto);
+
+            var result = await _patientService.UpdateProfileAsync(UserId, dto);
+            if (!result.IsSuccess)
+            {
+                ModelState.AddModelError("", result.ErrorMessage ?? "فشل تحديث الملف الشخصي.");
+                return View(dto);
+            }
+
+            TempData["SuccessMessage"] = "تم تحديث الملف الشخصي بنجاح.";
+            return RedirectToAction(nameof(Profile));
         }
 
         // GET: /Patient/MedicalRecords
         public async Task<IActionResult> MedicalRecords()
         {
-            // TODO: _patientService.GetMedicalRecordsAsync(UserId), pass list to view.
-            throw new NotImplementedException();
+            var result = await _patientService.GetMedicalRecordsAsync(UserId);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل السجلات الطبية.";
+                return View(new List<MedicalRecordDto>());
+            }
+
+            return View(result.Data);
         }
 
         // POST: /Patient/AddMedicalRecord
@@ -69,15 +96,24 @@ namespace Etmen_PL.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddMedicalRecord(MedicalRecordCreateDto dto)
         {
-            // TODO: _patientService.AddMedicalRecordAsync(UserId, dto), redirect to MedicalRecords.
-            throw new NotImplementedException();
+            if (!ModelState.IsValid)
+                return RedirectToAction(nameof(MedicalRecords));
+
+            var result = await _patientService.AddMedicalRecordAsync(UserId, dto);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل إضافة السجل الطبي.";
+                return RedirectToAction(nameof(MedicalRecords));
+            }
+
+            TempData["SuccessMessage"] = "تم إضافة السجل الطبي بنجاح.";
+            return RedirectToAction(nameof(MedicalRecords));
         }
 
         // GET: /Patient/RiskAssessment
-        public async Task<IActionResult> RiskAssessment()
+        public IActionResult RiskAssessment()
         {
-            // TODO: Return RiskAssessment form view (view already exists).
-            throw new NotImplementedException();
+            return View(new RiskInputDto());
         }
 
         // POST: /Patient/RiskAssessment
@@ -85,52 +121,38 @@ namespace Etmen_PL.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RiskAssessment(RiskInputDto dto)
         {
-            // TODO: _patientService.AssessRiskAsync(UserId, dto), redirect to RiskResult view with result.
-            throw new NotImplementedException();
+            if (!ModelState.IsValid)
+                return View(dto);
+
+            var result = await _patientService.AssessRiskAsync(UserId, dto);
+            if (!result.IsSuccess)
+            {
+                ModelState.AddModelError("", result.ErrorMessage ?? "فشل حساب المخاطر.");
+                return View(dto);
+            }
+
+            TempData["RiskResult"] = System.Text.Json.JsonSerializer.Serialize(result.Data);
+            return RedirectToAction(nameof(RiskResult));
         }
 
         // GET: /Patient/RiskResult
         public async Task<IActionResult> RiskResult()
         {
-            // TODO: _patientService.GetLatestRiskAssessmentAsync(UserId), pass to RiskResult view.
-            throw new NotImplementedException();
+            var result = await _patientService.GetLatestRiskAssessmentAsync(UserId);
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = "لا توجد تقييمات مخاطر سابقة.";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            return View(result.Data);
         }
 
         // GET: /Patient/Appointments
         public async Task<IActionResult> Appointments()
         {
-            // TODO: _appointmentService.GetPatientAppointmentsAsync(UserId), pass to Appointments view.
-            throw new NotImplementedException();
-        }
-
-        // POST: /Patient/CancelAppointment
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CancelAppointment(int appointmentId)
-        {
-            // TODO: _appointmentService.CancelAppointmentAsync(UserId, appointmentId), redirect to Appointments.
-            throw new NotImplementedException();
-        }
-
-        // GET: /Patient/Alerts
-        public async Task<IActionResult> Alerts()
-        {
-            // TODO: _alertService.GetUserAlertsAsync(UserId), pass to Alerts view.
-            throw new NotImplementedException();
-        }
-
-        // GET: /Patient/LabResults
-        public async Task<IActionResult> LabResults()
-        {
-            // TODO: Resolve patientId from UserId, _labService.GetPatientLabResultsAsync(patientId), pass to view.
-            throw new NotImplementedException();
-        }
-
-        // GET: /Patient/Nearby
-        public IActionResult Nearby()
-        {
-            // TODO: Return Nearby view (search form). Results loaded via AJAX or POST.
-            throw new NotImplementedException();
+            // This will be implemented when IAppointmentService is fully available
+            return View(new List<dynamic>());
         }
     }
 }

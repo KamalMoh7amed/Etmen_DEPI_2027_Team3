@@ -11,45 +11,56 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<PatientProfile?> GetByUserIdAsync(string userId)
         {
-            // TODO: FirstOrDefaultAsync(p => p.UserId == userId).
-            throw new NotImplementedException();
+            return await _dbSet.FirstOrDefaultAsync(p => p.ApplicationUserId == userId);
         }
 
         public async Task<PatientProfile?> GetWithMedicalRecordsAsync(string userId)
         {
-            // TODO: _dbSet.Include(p=>p.MedicalRecords).FirstOrDefaultAsync(p=>p.UserId==userId).
-            throw new NotImplementedException();
+            return await _dbSet
+                .Include(p => p.MedicalRecords)
+                .FirstOrDefaultAsync(p => p.ApplicationUserId == userId);
         }
 
         public async Task<PatientProfile?> GetWithRiskAssessmentsAsync(string userId)
         {
-            // TODO: _dbSet.Include(p=>p.RiskAssessments).FirstOrDefaultAsync(p=>p.UserId==userId).
-            throw new NotImplementedException();
+            return await _dbSet
+                .Include(p => p.RiskAssessments)
+                .FirstOrDefaultAsync(p => p.ApplicationUserId == userId);
         }
 
         public async Task<PatientProfile?> GetWithAppointmentsAsync(string userId)
         {
-            // TODO: _dbSet.Include(p=>p.Appointments).FirstOrDefaultAsync(p=>p.UserId==userId).
-            throw new NotImplementedException();
+            return await _dbSet
+                .Include(p => p.Appointments)
+                .FirstOrDefaultAsync(p => p.ApplicationUserId == userId);
         }
 
         public async Task<PatientProfile?> GetWithFamilyLinksAsync(int patientId)
         {
-            // TODO: _dbSet.Include(p=>p.FamilyLinks).FirstOrDefaultAsync(p=>p.Id==patientId).
-            throw new NotImplementedException();
+            return await _dbSet
+                .Include(p => p.PrimaryLinks)
+                .Include(p => p.LinkedLinks)
+                .FirstOrDefaultAsync(p => p.Id == patientId);
         }
 
         public async Task<IEnumerable<PatientProfile>> GetFamilyMembersAsync(int patientId)
         {
-            // TODO: Via FamilyLinks, get all linked PatientProfiles.
-            throw new NotImplementedException();
+            var profile = await _dbSet
+                .Include(p => p.PrimaryLinks)
+                .ThenInclude(f => f.LinkedPatient)
+                .FirstOrDefaultAsync(p => p.Id == patientId);
+
+            return profile?.PrimaryLinks.Select(f => f.LinkedPatient) ?? new List<PatientProfile>();
         }
 
         public async Task<decimal?> GetLatestBmiAsync(string userId)
         {
-            // TODO: Get latest MedicalRecord for userId, return BMI field.
-            throw new NotImplementedException();
-        }
+            var profile = await GetByUserIdAsync(userId);
+            if (profile == null)
+                return null;
 
+            // BMI is calculated property in PatientProfile
+            return profile.BMI > 0 ? profile.BMI : null;
+        }
     }
 }
