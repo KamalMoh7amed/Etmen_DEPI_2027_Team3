@@ -12,8 +12,8 @@
 | # | Name | Skill Level | Role |
 |---|------|-------------|------|
 | 1 | **كمال محمد صابر** | ⭐⭐⭐⭐⭐ Expert | 🎯 Team Lead + Complex Tasks |
-| 2 | **بهنساوي** | ⭐⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
-| 3 | **عبد الحميد** | ⭐⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
+| 2 | **بهنساوي** | ⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
+| 3 | **عبد الحميد** | ⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
 | 4 | كريم | ⭐⭐⭐ Intermediate | Standard Tasks |
 | 5 | عبدالرحمن | ⭐⭐⭐ Intermediate | Foundation Tasks |
 
