@@ -1,9 +1,10 @@
 # 📋 Etmen DEPI Project — Task Distribution Board
 
 > **Project:** Etmen Health Platform  
-> **Team:** 5 Members  
+> **Team:** 4 Members (بعد إعادة التوزيع)  
 > **Focus:** Backend Implementation Only (BLL Services + DAL Repositories + PL Controllers)  
 > **Date:** 2026  
+> **آخر تحديث:** شغل كريم اتضاف لعبدالرحمن
 
 ---
 
@@ -12,10 +13,10 @@
 | # | Name | Skill Level | Role |
 |---|------|-------------|------|
 | 1 | **كمال محمد صابر** | ⭐⭐⭐⭐⭐ Expert | 🎯 Team Lead + Complex Tasks |
-| 2 | **بهنساوي** | ⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
-| 3 | **عبد الحميد** | ⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
-| 4 | كريم | ⭐⭐⭐ Intermediate | Standard Tasks |
-| 5 | عبدالرحمن | ⭐⭐⭐ Intermediate | Foundation Tasks |
+| 2 | **بهنساوي** | ⭐⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
+| 3 | **عبد الحميد** | ⭐⭐⭐⭐⭐ Advanced | 🔥 High-Complexity Tasks |
+| 4 | **عبدالرحمن** | ⭐⭐⭐ Intermediate | Foundation + Standard Tasks |
+| ~~5~~ | ~~كريم~~ | ~~⭐⭐⭐ Intermediate~~ | ~~تم نقل مهامه لعبدالرحمن~~ |
 
 ---
 
@@ -119,29 +120,60 @@
 
 ---
 
-### 👤 كريم — Group 2: Doctors & Appointments 🩺📅
-> **Medium Complexity** — Transactional logic, slot management
+### 👤 عبدالرحمن — Group 1 + Group 2: Auth, Patient Profile, Doctors & Appointments 🔐👤🩺📅
+> **Foundation + Standard Tasks** — ⚠️ 
 
-#### 📁 Services (BLL)
-| File | Methods |
+---
+
+#### 🔐 Group 1: Auth & Patient Profile
+
+##### 📁 Services (BLL)
+| File | Methods | Complexity |
+|------|---------|------------|
+| `AuthService.cs` | `RegisterAsync`, `LoginAsync`, `VerifyEmailAsync`, `ForgotPasswordAsync`, `ResetPasswordAsync`, `DeactivateAccountAsync`, `IsEmailTakenAsync` | 🟢 Foundation |
+| `PatientService.cs` | `GetProfileAsync`, `UpdateProfileAsync`, `GetDashboardAsync` | 🟢 Foundation |
+
+##### 🎮 Controllers (PL)
+| File | Actions |
 |------|---------|
-| `DoctorService.cs` | All methods |
-| `AppointmentService.cs` | All methods |
+| `AccountController.cs` | `Register`, `Login`, `Logout`, `VerifyEmail`, `ForgotPassword`, `ResetPassword` |
+| `PatientController.cs` | `Dashboard`, `Profile` (GET + POST) |
 
-#### 🎮 Controllers (PL)
+##### 🗄️ DAL Repositories
+| File | Methods Count |
+|------|--------------|
+| `PatientProfileRepository.cs` | 7 |
+
+> 💡 **Implementation Tips (Group 1):**
+> - Use injected `UserManager<ApplicationUser>` and `SignInManager` for auth operations
+> - JWT token generation in `AuthService.LoginAsync`: read signing key from `appsettings.json`
+> - `GetDashboardAsync`: Aggregate upcoming appointments + latest risk assessment + unread alerts count
+> - Email confirmation tokens: use `UserManager.GenerateEmailConfirmationTokenAsync()`
+
+---
+
+#### 🩺 Group 2: Doctors & Appointments *(نُقل من كريم)*
+
+##### 📁 Services (BLL)
+| File | Methods | Complexity |
+|------|---------|------------|
+| `DoctorService.cs` | All methods | 🟡 Medium |
+| `AppointmentService.cs` | All methods | 🟡 Medium |
+
+##### 🎮 Controllers (PL)
 | File | Actions |
 |------|---------|
 | `DoctorController.cs` | All actions |
 | `PatientController.cs` | `Appointments`, `CancelAppointment` |
 
-#### 🗄️ DAL Repositories
+##### 🗄️ DAL Repositories
 | File | Methods Count |
 |------|--------------|
 | `DoctorProfileRepository.cs` | 6 |
 | `AppointmentRepository.cs` | 8 |
 | `AvailableSlotRepository.cs` | 6 |
 
-> ⚠️ **Critical Requirement:**
+> ⚠️ **Critical Requirements (Group 2):**
 > - `BookAppointmentAsync` MUST be transactional:
 >   ```csharp
 >   using var transaction = await _unitOfWork.BeginTransactionAsync();
@@ -158,78 +190,52 @@
 
 ---
 
-### 👤 عبدالرحمن — Group 1: Auth & Patient Profile 🔐👤
-> **Foundation Level** — Ideal for onboarding and understanding project structure
-
-#### 📁 Services (BLL)
-| File | Methods |
-|------|---------|
-| `AuthService.cs` | `RegisterAsync`, `LoginAsync`, `VerifyEmailAsync`, `ForgotPasswordAsync`, `ResetPasswordAsync`, `DeactivateAccountAsync`, `IsEmailTakenAsync` |
-| `PatientService.cs` | `GetProfileAsync`, `UpdateProfileAsync`, `GetDashboardAsync` |
-
-#### 🎮 Controllers (PL)
-| File | Actions |
-|------|---------|
-| `AccountController.cs` | `Register`, `Login`, `Logout`, `VerifyEmail`, `ForgotPassword`, `ResetPassword` |
-| `PatientController.cs` | `Dashboard`, `Profile` (GET + POST) |
-
-#### 🗄️ DAL Repositories
-| File | Methods Count |
-|------|--------------|
-| `PatientProfileRepository.cs` | 7 |
-
-> 💡 **Implementation Tips:**
-> - Use injected `UserManager<ApplicationUser>` and `SignInManager` for auth operations
-> - JWT token generation in `AuthService.LoginAsync`: read signing key from `appsettings.json`
-> - `GetDashboardAsync`: Aggregate upcoming appointments + latest risk assessment + unread alerts count
-> - Email confirmation tokens: use `UserManager.GenerateEmailConfirmationTokenAsync()`
-
----
-graph TD
-    A[📥 Pull latest code] --> B[📖 Read // TODO comments]
-    B --> C[✍️ Implement stub methods]
-    C --> D[🔨 dotnet build + manual test]
-    D --> E[🧪 Write unit tests if possible]
-    E --> F[🚀 Open PR + tag reviewer]
-    F --> G[👀 Code review by كمال]
-    G --> H{Approved?}
-    H -->|Yes| I[✅ Merge to main]
-    H -->|No| J[🔧 Fix + re-request review]
-    J --> G
-    
 ## ✅ Shared Checklist (All Members)
 
-```markdown
-## Before Starting
+### Before Starting
 - [ ] Pull latest code from main branch
 - [ ] Read all `// TODO` comments in your assigned stub files carefully
 
-## During Implementation
+### During Implementation
 - [ ] Replace `throw new NotImplementedException();` with real logic
 - [ ] Register your service interface + implementation in `Program.cs` using `AddScoped`
 - [ ] Verify AutoMapper mappings in `BLLMappingProfile.cs` include your DTOs
 - [ ] Do NOT modify interfaces, DTOs, entities, or EF configurations — implement stubs only
 
-## Before Pushing
+### Before Pushing
 - [ ] Run `dotnet build` — ensure zero compile errors
 - [ ] Write at least one manual test OR unit test per implemented method
 - [ ] Test edge cases: null inputs, unauthorized access, duplicate data
 - [ ] Add XML comments for public methods (optional but recommended)
 
-## PR Process
-- [ ] Open one PR per task group (e.g., "feat: implement Group 3 - Medical Records")
+### PR Process
+- [ ] Open one PR per task group (e.g., `"feat: implement Group 1+2 - Auth & Appointments"`)
 - [ ] Tag @كمال محمد صابر for code review
 - [ ] Address review comments before merge
 - [ ] Update this board after PR merge ✅
 
-graph TD
-    A[📥 Pull latest code] --> B[📖 Read // TODO comments]
-    B --> C[✍️ Implement stub methods]
-    C --> D[🔨 dotnet build + manual test]
-    D --> E[🧪 Write unit tests if possible]
-    E --> F[🚀 Open PR + tag reviewer]
-    F --> G[👀 Code review by كمال]
-    G --> H{Approved?}
-    H -->|Yes| I[✅ Merge to main]
-    H -->|No| J[🔧 Fix + re-request review]
-    J --> G
+---
+
+## 🔄 Workflow
+
+```
+Pull latest code
+      ↓
+Read // TODO comments
+      ↓
+Implement stub methods
+      ↓
+dotnet build + manual test
+      ↓
+Write unit tests if possible
+      ↓
+Open PR + tag reviewer
+      ↓
+Code review by كمال
+      ↓
+  Approved? ──No──→ Fix + re-request review
+      │
+     Yes
+      ↓
+  Merge to main ✅
+```
