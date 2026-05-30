@@ -12,56 +12,75 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<CrisisConfiguration?> GetActiveCrisisAsync()
         {
-            // TODO: FirstOrDefaultAsync(c => c.IsActive).
-            throw new NotImplementedException();
+            return await FirstOrDefaultAsync(c => c.IsActive);
         }
 
         public async Task<CrisisConfiguration?> GetWithOutbreakZonesAsync(int crisisId)
         {
-            // TODO: _dbSet.Include(c=>c.OutbreakZones).FirstOrDefaultAsync(c=>c.Id==crisisId).
-            throw new NotImplementedException();
+            return await _dbSet.Include(c => c.OutbreakZones)
+                .FirstOrDefaultAsync(c => c.Id == crisisId);
         }
 
         public async Task<CrisisConfiguration?> GetWithSymptomWeightsAsync(int crisisId)
         {
-            // TODO: _dbSet.Include(c=>c.SymptomWeights).FirstOrDefaultAsync(c=>c.Id==crisisId).
-            throw new NotImplementedException();
+            return await _dbSet.Include(c => c.SymptomWeights)
+                .FirstOrDefaultAsync(c => c.Id == crisisId);
         }
 
         public async Task<IEnumerable<CrisisConfiguration>> GetAllCrisesAsync()
         {
-            // TODO: _dbSet.AsNoTracking().OrderByDescending(c=>c.CreatedAt).ToListAsync().
-            throw new NotImplementedException();
+            return await _dbSet.AsNoTracking()
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<CrisisConfiguration>> GetByTypeAsync(CrisisType crisisType)
         {
-            // TODO: FindAsync(c => c.CrisisType == crisisType).
-            throw new NotImplementedException();
+            return await FindAsync(c => c.CrisisType == crisisType);
         }
 
         public async Task<IEnumerable<CrisisConfiguration>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: FindAsync(c => c.StartDate >= startDate && (c.EndDate == null || c.EndDate <= endDate)).
-            throw new NotImplementedException();
+            return await FindAsync(c => c.StartDate >= startDate && (c.EndDate == null || c.EndDate <= endDate));
         }
 
         public async Task ActivateCrisisAsync(int crisisId)
         {
-            // TODO: GetByIdAsync, set IsActive=true, deactivate others if needed, Update.
-            throw new NotImplementedException();
+            // Deactivate all other crises first
+            var activeCrisis = await FirstOrDefaultAsync(c => c.IsActive);
+            if (activeCrisis != null)
+            {
+                activeCrisis.IsActive = false;
+                Update(activeCrisis);
+            }
+
+            // Activate the target crisis
+            var crisis = await GetByIdAsync(crisisId);
+            if (crisis != null)
+            {
+                crisis.IsActive = true;
+                Update(crisis);
+            }
         }
 
         public async Task DeactivateCrisisAsync(int crisisId)
         {
-            // TODO: GetByIdAsync, set IsActive=false, Update.
-            throw new NotImplementedException();
+            var crisis = await GetByIdAsync(crisisId);
+            if (crisis != null)
+            {
+                crisis.IsActive = false;
+                Update(crisis);
+            }
         }
 
         public async Task UpdateSystemModeAsync(int crisisId, SystemMode mode)
         {
-            // TODO: GetByIdAsync, set SystemMode=mode, Update.
-            throw new NotImplementedException();
+            var crisis = await GetByIdAsync(crisisId);
+            if (crisis != null)
+            {
+                crisis.SystemMode = mode;
+                Update(crisis);
+            }
         }
 
     }

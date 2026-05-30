@@ -1,5 +1,6 @@
 using Etmen_Domain.Entities;
 using Etmen_DAL.DbContext;
+using Etmen_DAL.Helpers;
 using Etmen_DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,38 +12,46 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<IEnumerable<HealthcareProvider>> GetNearbyProvidersAsync(decimal latitude, decimal longitude, decimal radiusInKm)
         {
-            // TODO: Use GeoHelper.CalculateDistance or raw Haversine to filter providers within radius.
-            throw new NotImplementedException();
+            var providers = await GetAllAsync();
+            return providers.Where(p => GeoHelper.CalculateDistance(latitude, longitude, p.Latitude, p.Longitude) <= radiusInKm);
         }
 
         public async Task<IEnumerable<HealthcareProvider>> GetEmergencyCentersAsync(decimal latitude, decimal longitude, decimal radiusInKm)
         {
-            // TODO: GetNearbyProvidersAsync filtered by Type == EmergencyCenter.
-            throw new NotImplementedException();
+            var nearbyProviders = await GetNearbyProvidersAsync(latitude, longitude, radiusInKm);
+            return nearbyProviders.Where(p => p.IsEmergencyCenter);
         }
 
         public async Task<IEnumerable<HealthcareProvider>> GetByTypeAsync(string type)
         {
-            // TODO: FindAsync(p => p.Type == type).
-            throw new NotImplementedException();
+            return await FindAsync(p => p.Type == type);
         }
 
         public async Task<IEnumerable<HealthcareProvider>> GetWithAvailableBedsAsync()
         {
-            // TODO: FindAsync(p => p.AvailableBeds > 0).
-            throw new NotImplementedException();
+            return await FindAsync(p => p.AvailableBeds.HasValue && p.AvailableBeds > 0);
         }
 
         public async Task UpdateAvailableBedsAsync(int providerId, int bedsCount)
         {
-            // TODO: GetByIdAsync, set AvailableBeds=bedsCount, Update.
-            throw new NotImplementedException();
+            var provider = await GetByIdAsync(providerId);
+            if (provider != null)
+            {
+                provider.AvailableBeds = bedsCount;
+                Update(provider);
+            }
         }
 
         public async Task<IEnumerable<HealthcareProvider>> SearchProvidersAsync(string searchTerm, decimal? latitude, decimal? longitude)
         {
-            // TODO: Filter by name containing searchTerm, optionally sort by distance.
-            throw new NotImplementedException();
+            var providers = await FindAsync(p => p.Name.Contains(searchTerm));
+
+            if (latitude.HasValue && longitude.HasValue)
+            {
+                return providers.OrderBy(p => GeoHelper.CalculateDistance(latitude.Value, longitude.Value, p.Latitude, p.Longitude));
+            }
+
+            return providers;
         }
 
     }
