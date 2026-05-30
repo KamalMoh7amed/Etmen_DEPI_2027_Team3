@@ -1,55 +1,84 @@
-using Etmen_Domain.Entities;
 using Etmen_DAL.DbContext;
 using Etmen_DAL.Repositories.Interfaces;
+using Etmen_Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Etmen_DAL.Repositories.Implementations
 {
     public class LabResultRepository : GenericRepository<LabResult>, ILabResultRepository
     {
-        public LabResultRepository(EtmenDbContext context) : base(context) { }
+        public LabResultRepository(EtmenDbContext context) : base(context)
+        {
+        }
 
         public async Task<IEnumerable<LabResult>> GetByPatientIdAsync(int patientId)
         {
-            // TODO: FindAsync(l => l.PatientProfileId == patientId) ordered by TestDate desc.
-            throw new NotImplementedException();
+           
+                return await Table.Where(l => l.PatientProfileId == patientId).ToListAsync();
         }
 
         public async Task<LabResult?> GetLatestByPatientIdAsync(int patientId)
         {
-            // TODO: FirstOrDefaultAsync ordered by TestDate desc.
-            throw new NotImplementedException();
+           
+                return await Table.Where(l => l.PatientProfileId == patientId).OrderByDescending(l => l.TestDate).FirstOrDefaultAsync(); 
         }
 
-        public async Task<IEnumerable<LabResult>> GetByTestNameAsync(int patientId, string testName)
+        public async Task<IEnumerable<LabResult>> GetByTestNameAsync(int patientId,string testName)
         {
-            // TODO: FindAsync(l => l.PatientProfileId==patientId && l.TestName==testName).
-            throw new NotImplementedException();
+           
+                if (string.IsNullOrWhiteSpace(testName))
+                    throw new ArgumentException("Test name cannot be empty.",nameof(testName));
+
+                return await Table.Where(l =>l.PatientProfileId == patientId && l.TestName == testName).OrderByDescending(l => l.TestDate).ToListAsync();
+
         }
 
         public async Task<IEnumerable<LabResult>> GetWithOcrDataAsync(int patientId)
         {
-            // TODO: FindAsync(l => l.PatientProfileId==patientId && l.OcrData != null).
-            throw new NotImplementedException();
+            
+                return await Table.Where(l =>l.PatientProfileId == patientId && !string.IsNullOrEmpty(l.OcrExtractedData)).OrderByDescending(l => l.TestDate).ToListAsync();
+            
+            
         }
 
-        public async Task<IEnumerable<LabResult>> GetByDateRangeAsync(int patientId, DateTime startDate, DateTime endDate)
+        public async Task<IEnumerable<LabResult>> GetByDateRangeAsync(int patientId,DateTime startDate, DateTime endDate)
         {
-            // TODO: FindAsync(l => l.PatientProfileId==patientId && l.TestDate>=startDate && l.TestDate<=endDate).
-            throw new NotImplementedException();
+           
+                if (startDate > endDate)
+                    throw new ArgumentException("Start date cannot be greater than end date.");
+
+            return await Table .Where(l => l.PatientProfileId == patientId && l.TestDate >= startDate && l.TestDate <= endDate).OrderByDescending(l => l.TestDate).ToListAsync();
         }
 
         public async Task UpdateOcrDataAsync(int labResultId, string ocrData)
         {
-            // TODO: GetByIdAsync, set OcrData=ocrData, Update.
-            throw new NotImplementedException();
-        }
+           
+                if (string.IsNullOrWhiteSpace(ocrData))
+                    throw new ArgumentException( "OCR data cannot be empty.", nameof(ocrData));
 
-        public async Task<IEnumerable<LabResult>> SearchLabResultsAsync(int patientId, string searchTerm)
+                var labResult = await GetByIdAsync(labResultId);
+
+                if (labResult == null)
+                    throw new KeyNotFoundException($"Lab result with ID {labResultId} was not found.");
+
+                labResult.OcrExtractedData = ocrData;
+
+                Update(labResult);
+           
+        }
+        
+        
+
+        public async Task<IEnumerable<LabResult>> SearchLabResultsAsync( int patientId,string searchTerm)
         {
-            // TODO: FindAsync(l => l.PatientProfileId==patientId && l.TestName.Contains(searchTerm)).
-            throw new NotImplementedException();
-        }
+            
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    throw new ArgumentException( "Search term cannot be empty.",nameof(searchTerm));
 
+                searchTerm = searchTerm.Trim();
+
+                return await Table.Where(l =>l.PatientProfileId == patientId &&  l.TestName.Contains(searchTerm)) .OrderByDescending(l => l.TestDate) .ToListAsync();
+           
+        }
     }
 }
