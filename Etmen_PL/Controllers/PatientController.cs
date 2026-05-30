@@ -96,20 +96,20 @@ namespace Etmen_PL.Controllers
             throw new NotImplementedException();
         }
 
-        // GET: /Patient/Appointments
         public async Task<IActionResult> Appointments()
         {
-            // TODO: _appointmentService.GetPatientAppointmentsAsync(UserId), pass to Appointments view.
-            throw new NotImplementedException();
+            var result = await _appointmentService.GetPatientAppointmentsAsync(UserId);
+            if (!result.IsSuccess)
+                return NotFound();
+            return View(result.Data);
         }
 
-        // POST: /Patient/CancelAppointment
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CancelAppointment(int appointmentId)
         {
-            // TODO: _appointmentService.CancelAppointmentAsync(UserId, appointmentId), redirect to Appointments.
-            throw new NotImplementedException();
+            await _appointmentService.CancelAppointmentAsync(UserId, appointmentId);
+            return RedirectToAction(nameof(Appointments));
         }
 
         // GET: /Patient/Alerts
