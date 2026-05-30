@@ -34,6 +34,7 @@ namespace Etmen_PL.Controllers
         private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         // GET: /Patient/Dashboard
+        [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
             var result = await _patientService.GetDashboardAsync(UserId);
@@ -45,6 +46,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/Profile
+        [HttpGet]
         public async Task<IActionResult> Profile()
         {
             var result = await _patientService.GetProfileAsync(UserId);
@@ -76,6 +78,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/MedicalRecords
+        [HttpGet]
         public async Task<IActionResult> MedicalRecords()
         {
             var result = await _patientService.GetMedicalRecordsAsync(UserId);
@@ -107,6 +110,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/RiskAssessment
+        [HttpGet]
         public async Task<IActionResult> RiskAssessment()
         {
             return View();
@@ -132,6 +136,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/RiskResult
+        [HttpGet]
         public async Task<IActionResult> RiskResult()
         {
             var result = await _patientService.GetLatestRiskAssessmentAsync(UserId);
@@ -143,6 +148,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/Appointments
+        [HttpGet]
         public async Task<IActionResult> Appointments()
         {
             var result = await _appointmentService.GetPatientAppointmentsAsync(UserId);
@@ -171,6 +177,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/Alerts
+        [HttpGet]
         public async Task<IActionResult> Alerts()
         {
             var result = await _alertService.GetUserAlertsAsync(UserId);
@@ -182,6 +189,7 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/LabResults
+        [HttpGet]
         public async Task<IActionResult> LabResults()
         {
             // Resolve patientId from UserId
@@ -199,7 +207,8 @@ namespace Etmen_PL.Controllers
         }
 
         // GET: /Patient/Nearby
-        public IActionResult Nearby()
+        [HttpGet]
+        public async Task<IActionResult> Nearby()
         {
             return View();
         }

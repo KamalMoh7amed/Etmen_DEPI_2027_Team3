@@ -16,6 +16,8 @@ namespace Etmen_BLL.Repositories.IServices
 
         Task<ServiceResult<ProfileDto>> UpdateProfileAsync(string userId, ProfileDto dto);
 
+        Task<ServiceResult<int>> GetPatientIdAsync(string userId);
+
         // ── Dashboard ─────────────────────────────────────────────────────────────
 
         Task<ServiceResult<DashboardDto>> GetDashboardAsync(string userId);
