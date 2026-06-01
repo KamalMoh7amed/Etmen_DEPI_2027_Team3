@@ -12,50 +12,51 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<IEnumerable<Appointment>> GetByPatientIdAsync(int patientId)
         {
-            // TODO: FindAsync(a => a.PatientProfileId == patientId), include Patient and Doctor.
-            throw new NotImplementedException();
+            return await _dbSet.Include(a => a.PatientProfile).Include(a => a.DoctorProfile).Where(a => a.PatientProfileId == patientId).ToListAsync();
         }
 
         public async Task<IEnumerable<Appointment>> GetByDoctorIdAsync(int doctorId)
         {
-            // TODO: FindAsync(a => a.DoctorProfileId == doctorId), include Patient.
-            throw new NotImplementedException();
+            return await _dbSet.Include(a => a.PatientProfile).Where(a => a.DoctorProfileId == doctorId).ToListAsync();
         }
 
         public async Task<IEnumerable<Appointment>> GetUpcomingAppointmentsAsync(int patientId)
         {
-            // TODO: FindAsync(a => a.PatientProfileId == patientId && a.AppointmentDate > DateTime.UtcNow && a.Status == Scheduled).
-            throw new NotImplementedException();
+            return await _dbSet.Where(a => a.PatientProfileId == patientId && a.AppointmentDate > DateTime.UtcNow && a.Status == AppointmentStatus.Scheduled).ToListAsync();
         }
 
         public async Task<IEnumerable<Appointment>> GetByDateAsync(DateTime date)
         {
-            // TODO: FindAsync(a => a.AppointmentDate.Date == date.Date).
-            throw new NotImplementedException();
+            return await FindAsync(a => a.AppointmentDate.Date == date.Date);
         }
 
         public async Task<Appointment?> GetWithDetailsAsync(int appointmentId)
         {
-            // TODO: _dbSet.Include(a=>a.PatientProfile).Include(a=>a.DoctorProfile).FirstOrDefaultAsync(a=>a.Id==appointmentId).
-            throw new NotImplementedException();
+            return await _dbSet.Include(a => a.PatientProfile).Include(a => a.DoctorProfile).FirstOrDefaultAsync(a => a.Id == appointmentId);
         }
 
         public async Task<IEnumerable<Appointment>> GetByStatusAsync(AppointmentStatus status)
         {
-            // TODO: FindAsync(a => a.Status == status).
-            throw new NotImplementedException();
+            return await FindAsync(a => a.Status == status);
         }
 
         public async Task<int> GetAppointmentsCountByDateAsync(DateTime date, int? doctorId = null)
         {
-            // TODO: CountAsync with date filter and optional doctorId filter.
-            throw new NotImplementedException();
+            if (doctorId.HasValue)
+                return await CountAsync(a => a.AppointmentDate.Date == date.Date && a.DoctorProfileId == doctorId.Value);
+            return await CountAsync(a => a.AppointmentDate.Date == date.Date);
         }
 
         public async Task CancelAppointmentAsync(int appointmentId, string cancellationReason)
         {
-            // TODO: GetByIdAsync, set Status=Cancelled, CancellationReason=reason, Update.
-            throw new NotImplementedException();
+            var appointment = await GetByIdAsync(appointmentId);
+            if (appointment != null)
+            {
+                appointment.Status = AppointmentStatus.Cancelled;
+                appointment.Notes = cancellationReason;
+                appointment.UpdatedAt = DateTime.UtcNow;
+                Update(appointment);
+            }
         }
 
     }

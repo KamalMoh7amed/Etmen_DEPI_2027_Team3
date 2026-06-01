@@ -11,38 +11,32 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<DoctorProfile?> GetByUserIdAsync(string userId)
         {
-            // TODO: FirstOrDefaultAsync(d => d.UserId == userId).
-            throw new NotImplementedException();
+            return await _dbSet.FirstOrDefaultAsync(d => d.ApplicationUserId == userId);
         }
 
         public async Task<DoctorProfile?> GetWithAppointmentsAsync(string userId)
         {
-            // TODO: _dbSet.Include(d=>d.Appointments).FirstOrDefaultAsync(d=>d.UserId==userId).
-            throw new NotImplementedException();
+            return await _dbSet.Include(d => d.Appointments).FirstOrDefaultAsync(d => d.ApplicationUserId == userId);
         }
 
         public async Task<DoctorProfile?> GetWithAvailableSlotsAsync(int doctorId)
         {
-            // TODO: _dbSet.Include(d=>d.AvailableSlots).FirstOrDefaultAsync(d=>d.Id==doctorId).
-            throw new NotImplementedException();
+            return await _dbSet.Include(d => d.AvailableSlots).FirstOrDefaultAsync(d => d.Id == doctorId);
         }
 
         public async Task<IEnumerable<DoctorProfile>> GetAvailableDoctorsAsync()
         {
-            // TODO: FindAsync(d => d.IsAvailable && d.IsVerified).
-            throw new NotImplementedException();
+            return await FindAsync(d => d.IsAvailable);
         }
 
         public async Task<IEnumerable<DoctorProfile>> GetBySpecializationAsync(string specialization)
         {
-            // TODO: FindAsync(d => d.Specialization == specialization).
-            throw new NotImplementedException();
+            return await FindAsync(d => d.Specialization == specialization);
         }
 
         public async Task<IEnumerable<DoctorProfile>> SearchDoctorsAsync(string searchTerm)
         {
-            // TODO: FindAsync(d => d.FullName.Contains(searchTerm) || d.Specialization.Contains(searchTerm)).
-            throw new NotImplementedException();
+            return await FindAsync(d => (d.FullName != null && d.FullName.Contains(searchTerm)) || (d.Specialization != null && d.Specialization.Contains(searchTerm)));
         }
 
     }
