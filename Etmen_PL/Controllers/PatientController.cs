@@ -31,30 +31,28 @@ namespace Etmen_PL.Controllers
             _nearbyService = nearbyService;
         }
 
-        private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         // GET: /Patient/Dashboard
+        [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
             var result = await _patientService.GetDashboardAsync(UserId);
+
             if (!result.IsSuccess)
-            {
-                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل لوحة التحكم.";
-                return View(new DashboardDto());
-            }
+                return RedirectToAction("Error");
 
             return View(result.Data);
         }
 
         // GET: /Patient/Profile
+        [HttpGet]
         public async Task<IActionResult> Profile()
         {
             var result = await _patientService.GetProfileAsync(UserId);
+
             if (!result.IsSuccess)
-            {
-                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل الملف الشخصي.";
-                return View(new ProfileDto());
-            }
+                return RedirectToAction("Error");
 
             return View(result.Data);
         }
@@ -68,25 +66,25 @@ namespace Etmen_PL.Controllers
                 return View(dto);
 
             var result = await _patientService.UpdateProfileAsync(UserId, dto);
+
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError("", result.ErrorMessage ?? "فشل تحديث الملف الشخصي.");
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to update profile");
                 return View(dto);
             }
 
-            TempData["SuccessMessage"] = "تم تحديث الملف الشخصي بنجاح.";
+            TempData["SuccessMessage"] = "Profile updated successfully";
             return RedirectToAction(nameof(Profile));
         }
 
         // GET: /Patient/MedicalRecords
+        [HttpGet]
         public async Task<IActionResult> MedicalRecords()
         {
             var result = await _patientService.GetMedicalRecordsAsync(UserId);
+
             if (!result.IsSuccess)
-            {
-                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل السجلات الطبية.";
-                return View(new List<MedicalRecordDto>());
-            }
+                return RedirectToAction("Error");
 
             return View(result.Data);
         }
@@ -100,20 +98,22 @@ namespace Etmen_PL.Controllers
                 return RedirectToAction(nameof(MedicalRecords));
 
             var result = await _patientService.AddMedicalRecordAsync(UserId, dto);
+
             if (!result.IsSuccess)
             {
-                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل إضافة السجل الطبي.";
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to add medical record";
                 return RedirectToAction(nameof(MedicalRecords));
             }
 
-            TempData["SuccessMessage"] = "تم إضافة السجل الطبي بنجاح.";
+            TempData["SuccessMessage"] = "Medical record added successfully";
             return RedirectToAction(nameof(MedicalRecords));
         }
 
         // GET: /Patient/RiskAssessment
-        public IActionResult RiskAssessment()
+        [HttpGet]
+        public async Task<IActionResult> RiskAssessment()
         {
-            return View(new RiskInputDto());
+            return View();
         }
 
         // POST: /Patient/RiskAssessment
@@ -125,34 +125,92 @@ namespace Etmen_PL.Controllers
                 return View(dto);
 
             var result = await _patientService.AssessRiskAsync(UserId, dto);
+
             if (!result.IsSuccess)
             {
-                ModelState.AddModelError("", result.ErrorMessage ?? "فشل حساب المخاطر.");
+                ModelState.AddModelError(string.Empty, result.ErrorMessage ?? "Failed to assess risk");
                 return View(dto);
             }
 
-            TempData["RiskResult"] = System.Text.Json.JsonSerializer.Serialize(result.Data);
             return RedirectToAction(nameof(RiskResult));
         }
 
         // GET: /Patient/RiskResult
+        [HttpGet]
         public async Task<IActionResult> RiskResult()
         {
             var result = await _patientService.GetLatestRiskAssessmentAsync(UserId);
+
             if (!result.IsSuccess)
-            {
-                TempData["ErrorMessage"] = "لا توجد تقييمات مخاطر سابقة.";
-                return RedirectToAction(nameof(Dashboard));
-            }
+                return RedirectToAction(nameof(RiskAssessment));
 
             return View(result.Data);
         }
 
         // GET: /Patient/Appointments
+        [HttpGet]
         public async Task<IActionResult> Appointments()
         {
-            // This will be implemented when IAppointmentService is fully available
-            return View(new List<dynamic>());
+            var result = await _appointmentService.GetPatientAppointmentsAsync(UserId);
+
+            if (!result.IsSuccess)
+                return RedirectToAction("Error");
+
+            return View(result.Data);
+        }
+
+        // POST: /Patient/CancelAppointment
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelAppointment(int appointmentId)
+        {
+            var result = await _appointmentService.CancelAppointmentAsync(UserId, appointmentId);
+
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "Failed to cancel appointment";
+                return RedirectToAction(nameof(Appointments));
+            }
+
+            TempData["SuccessMessage"] = "Appointment cancelled successfully";
+            return RedirectToAction(nameof(Appointments));
+        }
+
+        // GET: /Patient/Alerts
+        [HttpGet]
+        public async Task<IActionResult> Alerts()
+        {
+            var result = await _alertService.GetUserAlertsAsync(UserId);
+
+            if (!result.IsSuccess)
+                return RedirectToAction("Error");
+
+            return View(result.Data);
+        }
+
+        // GET: /Patient/LabResults
+        [HttpGet]
+        public async Task<IActionResult> LabResults()
+        {
+            // Resolve patientId from UserId
+            var patientIdResult = await _patientService.GetPatientIdAsync(UserId);
+
+            if (!patientIdResult.IsSuccess)
+                return RedirectToAction("Error");
+
+            var labResult = await _labService.GetPatientLabResultsAsync(patientIdResult.Data);
+
+            if (!labResult.IsSuccess)
+                return RedirectToAction("Error");
+
+            return View(labResult.Data);
+        }
+
+        // GET: /Patient/Nearby
+        [HttpGet]
+        public async Task<IActionResult> Nearby()
+        {
+            return View();
         }
     }
 }

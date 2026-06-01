@@ -12,62 +12,77 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<IEnumerable<EmergencyRequest>> GetByPatientIdAsync(int patientId)
         {
-            // TODO: FindAsync(e => e.PatientProfileId == patientId) ordered by CreatedAt desc.
-            throw new NotImplementedException();
+            return await _dbSet.AsNoTracking()
+                .Where(e => e.PatientProfileId == patientId)
+                .OrderByDescending(e => e.RequestedAt)
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<EmergencyRequest>> GetByProviderIdAsync(int providerId)
         {
-            // TODO: FindAsync(e => e.ProviderId == providerId).
-            throw new NotImplementedException();
+            return await FindAsync(e => e.HealthcareProviderId == providerId);
         }
 
         public async Task<IEnumerable<EmergencyRequest>> GetPendingRequestsAsync()
         {
-            // TODO: FindAsync(e => e.Status == EmergencyRequestStatus.Pending).
-            throw new NotImplementedException();
+            return await FindAsync(e => e.Status == EmergencyRequestStatus.Pending);
         }
 
         public async Task<IEnumerable<EmergencyRequest>> GetByStatusAsync(EmergencyRequestStatus status)
         {
-            // TODO: FindAsync(e => e.Status == status).
-            throw new NotImplementedException();
+            return await FindAsync(e => e.Status == status);
         }
 
         public async Task<EmergencyRequest?> GetWithTrackingInfoAsync(int requestId)
         {
-            // TODO: _dbSet.Include(e=>e.PatientProfile).Include(e=>e.Provider).FirstOrDefaultAsync(e=>e.Id==requestId).
-            throw new NotImplementedException();
+            return await _dbSet.Include(e => e.PatientProfile)
+                .Include(e => e.HealthcareProvider)
+                .FirstOrDefaultAsync(e => e.Id == requestId);
         }
 
         public async Task AcceptRequestAsync(int requestId, int providerId)
         {
-            // TODO: GetByIdAsync, set Status=Accepted, ProviderId=providerId, AcceptedAt=UtcNow, Update.
-            throw new NotImplementedException();
+            var request = await GetByIdAsync(requestId);
+            if (request != null)
+            {
+                request.Status = EmergencyRequestStatus.Accepted;
+                request.HealthcareProviderId = providerId;
+                request.AcceptedAt = DateTime.UtcNow;
+                Update(request);
+            }
         }
 
         public async Task RejectRequestAsync(int requestId, string reason)
         {
-            // TODO: GetByIdAsync, set Status=Rejected, RejectionReason=reason, Update.
-            throw new NotImplementedException();
+            var request = await GetByIdAsync(requestId);
+            if (request != null)
+            {
+                request.Status = EmergencyRequestStatus.Rejected;
+                request.ResponseNotes = reason;
+                Update(request);
+            }
         }
 
         public async Task CompleteRequestAsync(int requestId, string notes)
         {
-            // TODO: GetByIdAsync, set Status=Completed, Notes=notes, CompletedAt=UtcNow, Update.
-            throw new NotImplementedException();
+            var request = await GetByIdAsync(requestId);
+            if (request != null)
+            {
+                request.Status = EmergencyRequestStatus.Completed;
+                request.ResponseNotes = notes;
+                request.CompletedAt = DateTime.UtcNow;
+                Update(request);
+            }
         }
 
         public async Task<IEnumerable<EmergencyRequest>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            // TODO: FindAsync(e => e.CreatedAt >= startDate && e.CreatedAt <= endDate).
-            throw new NotImplementedException();
+            return await FindAsync(e => e.RequestedAt >= startDate && e.RequestedAt <= endDate);
         }
 
         public async Task<int> GetPendingCountAsync()
         {
-            // TODO: CountAsync(e => e.Status == EmergencyRequestStatus.Pending).
-            throw new NotImplementedException();
+            return await CountAsync(e => e.Status == EmergencyRequestStatus.Pending);
         }
 
     }

@@ -1,5 +1,6 @@
 using Etmen_Domain.Entities;
 using Etmen_DAL.DbContext;
+using Etmen_DAL.Helpers;
 using Etmen_DAL.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,38 +12,42 @@ namespace Etmen_DAL.Repositories.Implementations
 
         public async Task<IEnumerable<OutbreakZone>> GetByCrisisIdAsync(int crisisId)
         {
-            // TODO: FindAsync(z => z.CrisisConfigurationId == crisisId).
-            throw new NotImplementedException();
+            return await FindAsync(z => z.CrisisConfigurationId == crisisId);
         }
 
         public async Task<IEnumerable<OutbreakZone>> GetNearbyZonesAsync(decimal latitude, decimal longitude, decimal radiusInKm)
         {
-            // TODO: Use GeoHelper/Haversine to find zones whose center is within radius.
-            throw new NotImplementedException();
+            var zones = await GetAllAsync();
+            return zones.Where(z => GeoHelper.CalculateDistance(latitude, longitude, z.CenterLatitude, z.CenterLongitude) <= radiusInKm);
         }
 
         public async Task<IEnumerable<OutbreakZone>> GetActiveZonesAsync(int crisisId)
         {
-            // TODO: FindAsync(z => z.CrisisConfigurationId==crisisId && z.IsActive).
-            throw new NotImplementedException();
+            return await FindAsync(z => z.CrisisConfigurationId == crisisId && z.RiskLevel > 0);
         }
 
         public async Task<bool> IsPointInZoneAsync(decimal latitude, decimal longitude, int zoneId)
         {
-            // TODO: GetByIdAsync, check if (lat,lon) falls within zone radius using GeoHelper.
-            throw new NotImplementedException();
+            var zone = await GetByIdAsync(zoneId);
+            if (zone == null)
+                return false;
+
+            return GeoHelper.IsPointInZone(latitude, longitude, zone);
         }
 
         public async Task<IEnumerable<OutbreakZone>> GetZonesByRiskLevelAsync(int crisisId, int riskLevel)
         {
-            // TODO: FindAsync(z => z.CrisisConfigurationId==crisisId && z.RiskLevel==riskLevel).
-            throw new NotImplementedException();
+            return await FindAsync(z => z.CrisisConfigurationId == crisisId && z.RiskLevel == riskLevel);
         }
 
         public async Task UpdateZoneRiskLevelAsync(int zoneId, int newRiskLevel)
         {
-            // TODO: GetByIdAsync, set RiskLevel=newRiskLevel, Update.
-            throw new NotImplementedException();
+            var zone = await GetByIdAsync(zoneId);
+            if (zone != null)
+            {
+                zone.RiskLevel = newRiskLevel;
+                Update(zone);
+            }
         }
 
     }
