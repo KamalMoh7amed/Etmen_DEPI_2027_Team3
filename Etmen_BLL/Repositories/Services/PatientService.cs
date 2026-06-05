@@ -56,6 +56,15 @@ namespace Etmen_BLL.Repositories.Services
             return ServiceResult<ProfileDto>.Success(result);
         }
 
+        public async Task<ServiceResult<int>> GetPatientIdAsync(string userId)
+        {
+            var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
+            if (profile == null)
+                return ServiceResult<int>.NotFound("الملف الشخصي غير موجود");
+
+            return ServiceResult<int>.Success(profile.Id);
+        }
+
         // ── Dashboard ─────────────────────────────────────────────────────────────
 
         public async Task<ServiceResult<DashboardDto>> GetDashboardAsync(string userId)
