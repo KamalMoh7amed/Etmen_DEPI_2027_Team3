@@ -1,19 +1,118 @@
-@* =====================================================================
-   View  : Patient/Dashboard.cshtml
-   Desc  : Patient Dashboard — shows upcoming appointments, latest risk level, unread alerts count, and recent medical records.
-
-   TODO  : Implement this view. The controller passes the appropriate DTO
-           as the model. Use the existing _Layout.cshtml for the shell.
-
-   Model : Set @model at the top once the controller action is implemented.
-   ===================================================================== *@
+@model Etmen_BLL.DTOs.Patient.DashboardDto
 
 @{
     ViewData["Title"] = "Dashboard";
-    // TODO: Set the correct @model directive, e.g.:
-    // @model Etmen_BLL.DTOs.Patient.DashboardViewModel
 }
 
-<h2>Patient — Dashboard</h2>
+<div class="container mt-4">
 
-@* TODO: Build the UI for: Patient Dashboard — shows upcoming appointments, latest risk level, unread alerts count, and recent medical records. *@
+    <h2 class="mb-4">Welcome, @Model.PatientName</h2>
+
+    <div class="row">
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body text-center">
+                    <h5>Appointments</h5>
+                    <h2>@Model.UpcomingAppointmentsCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body text-center">
+                    <h5>Unread Alerts</h5>
+                    <h2>@Model.UnreadAlertsCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-success">
+                <div class="card-body text-center">
+                    <h5>Latest BMI</h5>
+                    <h2>@Model.LatestBmi</h2>
+                    <small>@Model.LatestBmiCategory</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card text-white"
+                 style="background-color:@Model.LatestRiskAssessment?.RiskColor">
+                <div class="card-body text-center">
+                    <h5>Risk Level</h5>
+                    <h4>@Model.LatestRiskAssessment?.RiskLabel</h4>
+                    <small>Score: @Model.LatestRiskAssessment?.RiskScore</small>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="row mt-4">
+
+        <div class="col-md-6">
+
+            <div class="card">
+                <div class="card-header">
+                    Upcoming Appointments
+                </div>
+
+                <div class="card-body">
+
+                    @if (Model.UpcomingAppointments.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var item in Model.UpcomingAppointments)
+                            {
+                                <li class="list-group-item">
+                                    @item
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>No upcoming appointments.</p>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-6">
+
+            <div class="card">
+                <div class="card-header">
+                    Recent Alerts
+                </div>
+
+                <div class="card-body">
+
+                    @if (Model.RecentAlerts.Any())
+                    {
+                        <ul class="list-group">
+                            @foreach (var alert in Model.RecentAlerts)
+                            {
+                                <li class="list-group-item">
+                                    @alert
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <p>No recent alerts.</p>
+                    }
+
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

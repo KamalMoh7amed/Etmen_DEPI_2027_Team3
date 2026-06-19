@@ -23,5 +23,6 @@ namespace Etmen_Domain.Entities
         public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
         public virtual ICollection<ChatMessage> SentMessages { get; set; } = new List<ChatMessage>();
         public virtual ICollection<ChatMessage> ReceivedMessages { get; set; } = new List<ChatMessage>();
+        public object FullName { get; set; }
     }
 }

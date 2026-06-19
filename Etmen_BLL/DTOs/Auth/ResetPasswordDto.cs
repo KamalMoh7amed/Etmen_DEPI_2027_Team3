@@ -21,5 +21,6 @@ namespace Etmen_BLL.DTOs.Auth
         public string ConfirmPassword { get; set; } = string.Empty;
 
         public string? Token { get; set; }
+        public string NewPassword { get; internal set; }
     }
 }

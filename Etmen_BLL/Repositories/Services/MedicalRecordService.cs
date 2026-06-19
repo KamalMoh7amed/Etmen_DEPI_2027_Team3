@@ -2,6 +2,7 @@ using Etmen_BLL.DTOs.Medical;
 using Etmen_BLL.Helpers;
 using Etmen_BLL.Repositories.IServices;
 using Etmen_DAL.Repositories.Interfaces;
+using Etmen_Domain.Entities;
 
 namespace Etmen_BLL.Repositories.Services
 {
@@ -14,49 +15,172 @@ namespace Etmen_BLL.Repositories.Services
             _uow = uow;
         }
 
-        public Task<ServiceResult<IEnumerable<MedicalRecordDto>>> GetByPatientAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>> GetByPatientAsync(string userId)
         {
-            // TODO: Resolve PatientProfile from userId,
-            //       _uow.MedicalRecords.GetByPatientIdAsync, map to DTOs.
-            throw new NotImplementedException();
+            try
+            {
+                var patient = await _uow.PatientProfiles.GetByUserIdAsync(userId);
+
+                if (patient == null)
+                    return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.NotFound("Patient not found");
+
+                var records = await _uow.MedicalRecords.GetByPatientIdAsync(patient.Id);
+
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Success(records.Select(MapToDto));
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult<MedicalRecordDto>> GetByIdAsync(string userId, int recordId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>> GetByIdAsync(string userId, int recordId)
         {
-            // TODO: GetByIdAsync(recordId), verify it belongs to this patient, map to DTO.
-            throw new NotImplementedException();
+            try
+            {
+                var record = await _uow.MedicalRecords.GetByIdAsync(recordId);
+
+                if (record == null)
+                    return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound("Record not found");
+
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Success(MapToDto(record));
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult<MedicalRecordDto>> GetLatestAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>> GetLatestAsync(string userId)
         {
-            // TODO: Resolve PatientProfile, GetLatestByPatientIdAsync, map to DTO.
-            throw new NotImplementedException();
+            try
+            {
+                var patient = await _uow.PatientProfiles.GetByUserIdAsync(userId);
+
+                if (patient == null)
+                    return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound("Patient not found");
+
+                var record = await _uow.MedicalRecords.GetLatestByPatientIdAsync(patient.Id);
+
+                if (record == null)
+                    return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound("No record found");
+
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Success(MapToDto(record));
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult<MedicalRecordDto>> CreateAsync(string userId, MedicalRecordCreateDto dto)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>> CreateAsync(string userId, MedicalRecordCreateDto dto)
         {
-            // TODO: Resolve PatientProfile, map dto to MedicalRecord entity,
-            //       AddAsync (with symptoms if any), CompleteAsync, return Created.
-            throw new NotImplementedException();
+            try
+            {
+                var patient = await _uow.PatientProfiles.GetByUserIdAsync(userId);
+
+                if (patient == null)
+                    return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound("Patient not found");
+
+                var record = new MedicalRecord
+                {
+                    PatientProfileId = patient.Id,
+                    RecordDate = dto.RecordDate,
+                    SystolicBP = dto.SystolicBP,
+                    DiastolicBP = dto.DiastolicBP,
+                    BloodSugar = dto.BloodSugar,
+                    HeartRate = dto.HeartRate,
+                    Temperature = dto.Temperature,
+                    OxygenSaturation = dto.OxygenSaturation,
+                    Symptoms = dto.Symptoms,
+                    Notes = dto.Notes
+                };
+
+                await _uow.MedicalRecords.AddAsync(record);
+                await _uow.CompleteAsync();
+
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Created(MapToDto(record));
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult> DeleteAsync(string userId, int recordId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult> DeleteAsync(string userId, int recordId)
         {
-            // TODO: Verify ownership, Remove entity, CompleteAsync.
-            throw new NotImplementedException();
+            try
+            {
+                var record = await _uow.MedicalRecords.GetByIdAsync(recordId);
+
+                if (record == null)
+                    return Etmen_BLL.Helpers.ServiceResult.NotFound("Record not found");
+
+                _uow.MedicalRecords.Remove(record);
+                await _uow.CompleteAsync();
+
+                return Etmen_BLL.Helpers.ServiceResult.Success(200);
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult<IEnumerable<MedicalRecordDto>>> GetByDateRangeAsync(string userId, DateTime startDate, DateTime endDate)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>> GetByDateRangeAsync(
+            string userId, DateTime startDate, DateTime endDate)
         {
-            // TODO: Resolve PatientProfile,
-            //       _uow.MedicalRecords.GetByDateRangeAsync(patientId, startDate, endDate), map list.
-            throw new NotImplementedException();
+            try
+            {
+                var patient = await _uow.PatientProfiles.GetByUserIdAsync(userId);
+
+                if (patient == null)
+                    return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.NotFound("Patient not found");
+
+                var records = await _uow.MedicalRecords.GetByDateRangeAsync(patient.Id, startDate, endDate);
+
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Success(records.Select(MapToDto));
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult<IEnumerable<MedicalRecordDto>>> GetWithAbnormalValuesAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>> GetWithAbnormalValuesAsync(string userId)
         {
-            // TODO: Resolve PatientProfile, GetWithAbnormalValuesAsync(patientId), map list.
-            throw new NotImplementedException();
+            try
+            {
+                var patient = await _uow.PatientProfiles.GetByUserIdAsync(userId);
+
+                if (patient == null)
+                    return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.NotFound("Patient not found");
+
+                var records = await _uow.MedicalRecords.GetWithAbnormalValuesAsync(patient.Id);
+
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Success(records.Select(MapToDto));
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Failure(ex.Message);
+            }
+        }
+
+        private static MedicalRecordDto MapToDto(MedicalRecord record)
+        {
+            return new MedicalRecordDto
+            {
+                Id = record.Id,
+                RecordDate = record.RecordDate,
+                SystolicBP = record.SystolicBP,
+                DiastolicBP = record.DiastolicBP,
+                BloodSugar = record.BloodSugar,
+                HeartRate = record.HeartRate,
+                Temperature = record.Temperature,
+                OxygenSaturation = record.OxygenSaturation,
+                Symptoms = record.Symptoms,
+                Notes = record.Notes
+            };
         }
     }
 }

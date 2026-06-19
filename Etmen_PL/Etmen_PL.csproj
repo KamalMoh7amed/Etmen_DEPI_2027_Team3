@@ -24,4 +24,8 @@
     <ProjectReference Include="..\Etmen_BLL\Etmen_BLL.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\Uploads\Labs\" />
+  </ItemGroup>
+
 </Project>

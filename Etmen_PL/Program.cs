@@ -81,7 +81,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // 4. BUSINESS LOGIC LAYER — ALL SERVICES
 // ═══════════════════════════════════════════════════════════════
 
-// Auth
+//// Auth
 builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Patient
@@ -245,7 +245,8 @@ app.MapControllerRoute(
 // Default route
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+   // pattern: "{controller=Home}/{action=Index}/{id?}");
+pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.MapRazorPages();
 

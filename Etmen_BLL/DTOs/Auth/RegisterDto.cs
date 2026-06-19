@@ -37,5 +37,6 @@ namespace Etmen_BLL.DTOs.Auth
         [Required(ErrorMessage = "نوع الحساب مطلوب")]
         [Display(Name = "نوع الحساب")]
         public string Role { get; set; } = "Patient"; // "Patient" or "Doctor"
+        public object FullName { get; internal set; }
     }
 }

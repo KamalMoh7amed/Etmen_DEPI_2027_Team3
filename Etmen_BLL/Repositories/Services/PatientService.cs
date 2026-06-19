@@ -4,6 +4,7 @@ using Etmen_BLL.DTOs.Risk;
 using Etmen_BLL.Helpers;
 using Etmen_BLL.Repositories.IServices;
 using Etmen_DAL.Repositories.Interfaces;
+using Etmen_Domain.Enums;
 using Mapster;
 
 namespace Etmen_BLL.Repositories.Services
@@ -19,23 +20,22 @@ namespace Etmen_BLL.Repositories.Services
 
         // ── Profile ───────────────────────────────────────────────────────────────
 
-        public async Task<ServiceResult<ProfileDto>> GetProfileAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<ProfileDto>> GetProfileAsync(string userId)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<ProfileDto>.NotFound("الملف الشخصي غير موجود");
+                return Etmen_BLL.Helpers.ServiceResult<ProfileDto>.NotFound("الملف الشخصي غير موجود");
 
             var dto = profile.Adapt<ProfileDto>();
-            return ServiceResult<ProfileDto>.Success(dto);
+            return Etmen_BLL.Helpers.ServiceResult<ProfileDto>.Success(dto);
         }
 
-        public async Task<ServiceResult<ProfileDto>> UpdateProfileAsync(string userId, ProfileDto dto)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<ProfileDto>> UpdateProfileAsync(string userId, ProfileDto dto)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<ProfileDto>.NotFound("الملف الشخصي غير موجود");
+                return Etmen_BLL.Helpers.ServiceResult<ProfileDto>.NotFound("الملف الشخصي غير موجود");
 
-            // Update profile fields
             profile.FullName = dto.FullName;
             profile.DateOfBirth = dto.DateOfBirth;
             profile.Gender = dto.Gender;
@@ -53,20 +53,19 @@ namespace Etmen_BLL.Repositories.Services
             await _uow.CompleteAsync();
 
             var result = profile.Adapt<ProfileDto>();
-            return ServiceResult<ProfileDto>.Success(result);
+            return Etmen_BLL.Helpers.ServiceResult<ProfileDto>.Success(result);
         }
 
         // ── Dashboard ─────────────────────────────────────────────────────────────
 
-        public async Task<ServiceResult<DashboardDto>> GetDashboardAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<DashboardDto>> GetDashboardAsync(string userId)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<DashboardDto>.NotFound("الملف الشخصي غير موجود");
+                return Etmen_BLL.Helpers.ServiceResult<DashboardDto>.NotFound("الملف الشخصي غير موجود");
 
             try
             {
-                // Get upcoming appointments (next 7 days)
                 var upcomingAppts = await _uow.Appointments.GetUpcomingAppointmentsAsync(profile.Id);
                 var upcomingInNext7Days = upcomingAppts
                     .Where(a => a.AppointmentDate <= DateTime.Today.AddDays(7))
@@ -82,11 +81,24 @@ namespace Etmen_BLL.Repositories.Services
                     Status = a.Status.ToString()
                 }).ToList();
 
-                // Get latest risk assessment
                 var latestRisk = await _uow.RiskAssessments.GetLatestByPatientIdAsync(profile.Id);
-                var riskDto = latestRisk?.Adapt<RiskResultDto>();
+                RiskResultDto? riskDto = null;
 
-                // Get unread alerts
+                if (latestRisk != null)
+                {
+                    riskDto = new RiskResultDto
+                    {
+                        RiskScore = latestRisk.RiskScore,
+                        RiskLevel = latestRisk.RiskLevel,
+                        RiskColor = RiskCalculatorHelper.GetRiskColor(latestRisk.RiskLevel),
+                        RiskLabel = RiskCalculatorHelper.GetRiskLabel(latestRisk.RiskLevel),
+                        IsEmergency = latestRisk.RiskLevel == RiskLevel.Emergency,
+                        NearestEmergencyCenter = latestRisk.RiskLevel == RiskLevel.Emergency ? "مركز الطوارئ" : null,
+                        Recommendations = RiskCalculatorHelper.GenerateRecommendations(latestRisk.RiskLevel, new List<string>()),
+                        TriggeredSymptoms = new List<string>()
+                    };
+                }
+
                 var unreadAlerts = await _uow.Alerts.GetUnreadAlertsAsync(userId);
                 var alertsList = unreadAlerts.ToList();
                 var alertDtos = alertsList.Take(5).Select(a => new RecentAlertDto
@@ -97,11 +109,9 @@ namespace Etmen_BLL.Repositories.Services
                     IsRead = a.Status.ToString() == "Read"
                 }).ToList();
 
-                // Get latest BMI
                 var latestBmi = await _uow.PatientProfiles.GetLatestBmiAsync(userId);
                 var bmiCategory = GetBmiCategory(latestBmi ?? 0);
 
-                // Build dashboard
                 var dashboard = new DashboardDto
                 {
                     PatientName = profile.FullName ?? "المريض",
@@ -114,47 +124,47 @@ namespace Etmen_BLL.Repositories.Services
                     RecentAlerts = alertDtos
                 };
 
-                return ServiceResult<DashboardDto>.Success(dashboard);
+                return Etmen_BLL.Helpers.ServiceResult<DashboardDto>.Success(dashboard);
             }
             catch (Exception ex)
             {
-                return ServiceResult<DashboardDto>.Failure($"حدث خطأ: {ex.Message}");
+                return Etmen_BLL.Helpers.ServiceResult<DashboardDto>.Failure($"حدث خطأ: {ex.Message}");
             }
         }
 
         // ── Medical Records ───────────────────────────────────────────────────────
 
-        public async Task<ServiceResult<IEnumerable<MedicalRecordDto>>> GetMedicalRecordsAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>> GetMedicalRecordsAsync(string userId)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<IEnumerable<MedicalRecordDto>>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.NotFound();
 
             var records = await _uow.MedicalRecords.GetByPatientIdAsync(profile.Id);
             var dtos = records.Adapt<List<MedicalRecordDto>>();
 
-            return ServiceResult<IEnumerable<MedicalRecordDto>>.Success(dtos);
+            return Etmen_BLL.Helpers.ServiceResult<IEnumerable<MedicalRecordDto>>.Success(dtos);
         }
 
-        public async Task<ServiceResult<MedicalRecordDto>> GetLatestMedicalRecordAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>> GetLatestMedicalRecordAsync(string userId)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<MedicalRecordDto>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound();
 
             var record = await _uow.MedicalRecords.GetLatestByPatientIdAsync(profile.Id);
             if (record == null)
-                return ServiceResult<MedicalRecordDto>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound();
 
             var dto = record.Adapt<MedicalRecordDto>();
-            return ServiceResult<MedicalRecordDto>.Success(dto);
+            return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Success(dto);
         }
 
-        public async Task<ServiceResult<MedicalRecordDto>> AddMedicalRecordAsync(string userId, MedicalRecordCreateDto dto)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>> AddMedicalRecordAsync(string userId, MedicalRecordCreateDto dto)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<MedicalRecordDto>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.NotFound();
 
             var record = new Etmen_Domain.Entities.MedicalRecord
             {
@@ -175,28 +185,35 @@ namespace Etmen_BLL.Repositories.Services
             await _uow.CompleteAsync();
 
             var resultDto = record.Adapt<MedicalRecordDto>();
-            return ServiceResult<MedicalRecordDto>.Created(resultDto);
+            return Etmen_BLL.Helpers.ServiceResult<MedicalRecordDto>.Created(resultDto);
         }
 
         // ── Risk Assessment ───────────────────────────────────────────────────────
 
-        public async Task<ServiceResult<RiskResultDto>> AssessRiskAsync(string userId, RiskInputDto input)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<RiskResultDto>> AssessRiskAsync(string userId, RiskInputDto input)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<RiskResultDto>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.NotFound();
 
-            // Calculate risk score (basic implementation)
-            var riskScore = CalculateRiskScore(input, profile);
-            var riskLevel = GetRiskLevel(riskScore);
+            // استخدام الحقل input.Symptoms بدلاً من المسمى القديم المسبب للخطأ
+            var calculation = RiskCalculatorHelper.Calculate(
+                input.SystolicBP,
+                input.DiastolicBP,
+                input.HeartRate,
+                input.Temperature,
+                input.OxygenSaturation,
+                input.BloodSugar,
+                input.Symptoms
+            );
+
+            var riskLevel = RiskCalculatorHelper.GetRiskLevel(calculation.Score);
 
             var riskAssessment = new Etmen_Domain.Entities.RiskAssessment
             {
                 PatientProfileId = profile.Id,
-                RiskScore = riskScore,
+                RiskScore = calculation.Score,
                 RiskLevel = riskLevel,
-                Symptoms = input.Symptoms,
-                IsEmergency = riskScore >= 0.7m,
                 AssessmentDate = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
@@ -204,106 +221,67 @@ namespace Etmen_BLL.Repositories.Services
             await _uow.RiskAssessments.AddAsync(riskAssessment);
             await _uow.CompleteAsync();
 
-            var result = riskAssessment.Adapt<RiskResultDto>();
-            return ServiceResult<RiskResultDto>.Created(result);
+            var resultDto = new RiskResultDto
+            {
+                RiskScore = calculation.Score,
+                RiskLevel = riskLevel,
+                RiskColor = RiskCalculatorHelper.GetRiskColor(riskLevel),
+                RiskLabel = RiskCalculatorHelper.GetRiskLabel(riskLevel),
+                IsEmergency = calculation.IsEmergency,
+                TriggeredSymptoms = calculation.TriggeredFactors,
+                Recommendations = RiskCalculatorHelper.GenerateRecommendations(riskLevel, calculation.TriggeredFactors),
+                NearestEmergencyCenter = calculation.IsEmergency ? "مركز الطوارئ المركزي" : null
+            };
+
+            return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.Created(resultDto);
         }
 
-        public async Task<ServiceResult<RiskResultDto>> GetLatestRiskAssessmentAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<RiskResultDto>> GetLatestRiskAssessmentAsync(string userId)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<RiskResultDto>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.NotFound();
 
             var assessment = await _uow.RiskAssessments.GetLatestByPatientIdAsync(profile.Id);
             if (assessment == null)
-                return ServiceResult<RiskResultDto>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.NotFound();
 
-            var dto = assessment.Adapt<RiskResultDto>();
-            return ServiceResult<RiskResultDto>.Success(dto);
+            var dto = new RiskResultDto
+            {
+                RiskScore = assessment.RiskScore,
+                RiskLevel = assessment.RiskLevel,
+                RiskColor = RiskCalculatorHelper.GetRiskColor(assessment.RiskLevel),
+                RiskLabel = RiskCalculatorHelper.GetRiskLabel(assessment.RiskLevel),
+                IsEmergency = assessment.RiskLevel == RiskLevel.Emergency,
+                NearestEmergencyCenter = assessment.RiskLevel == RiskLevel.Emergency ? "مركز الطوارئ" : null,
+                Recommendations = RiskCalculatorHelper.GenerateRecommendations(assessment.RiskLevel, new List<string>()),
+                TriggeredSymptoms = new List<string>()
+            };
+
+            return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.Success(dto);
         }
 
-        public async Task<ServiceResult<IEnumerable<RiskResultDto>>> GetRiskHistoryAsync(string userId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<IEnumerable<RiskResultDto>>> GetRiskHistoryAsync(string userId)
         {
             var profile = await _uow.PatientProfiles.GetByUserIdAsync(userId);
             if (profile == null)
-                return ServiceResult<IEnumerable<RiskResultDto>>.NotFound();
+                return Etmen_BLL.Helpers.ServiceResult<IEnumerable<RiskResultDto>>.NotFound();
 
             var assessments = await _uow.RiskAssessments.GetByPatientIdAsync(profile.Id);
-            var dtos = assessments.Adapt<List<RiskResultDto>>();
 
-            return ServiceResult<IEnumerable<RiskResultDto>>.Success(dtos);
-        }
-
-        private decimal CalculateRiskScore(RiskInputDto input, Etmen_Domain.Entities.PatientProfile profile)
-        {
-            decimal score = 0m;
-
-            // BMI risk
-            if (profile.BMI > 0)
+            var dtos = assessments.Select(a => new RiskResultDto
             {
-                if (profile.BMI < 18.5m || profile.BMI > 30m)
-                    score += 0.15m;
-                if (profile.BMI > 35m)
-                    score += 0.15m;
-            }
+                RiskScore = a.RiskScore,
+                RiskLevel = a.RiskLevel,
+                RiskColor = RiskCalculatorHelper.GetRiskColor(a.RiskLevel),
+                RiskLabel = RiskCalculatorHelper.GetRiskLabel(a.RiskLevel),
+                IsEmergency = a.RiskLevel == RiskLevel.Emergency,
+                NearestEmergencyCenter = a.RiskLevel == RiskLevel.Emergency ? "مركز الطوارئ" : null,
+                Recommendations = RiskCalculatorHelper.GenerateRecommendations(a.RiskLevel, new List<string>()),
+                TriggeredSymptoms = new List<string>()
+            }).ToList();
 
-            // Systolic BP risk
-            if (input.SystolicBP.HasValue)
-            {
-                if (input.SystolicBP > 140)
-                    score += 0.25m;
-                else if (input.SystolicBP > 130)
-                    score += 0.15m;
-            }
-
-            // Blood Sugar risk
-            if (input.BloodSugar.HasValue)
-            {
-                if (input.BloodSugar > 200)
-                    score += 0.25m;
-                else if (input.BloodSugar > 140)
-                    score += 0.15m;
-            }
-
-            // Heart Rate risk
-            if (input.HeartRate.HasValue)
-            {
-                if (input.HeartRate > 100 || input.HeartRate < 60)
-                    score += 0.1m;
-            }
-
-            // Temperature risk
-            if (input.Temperature.HasValue)
-            {
-                if (input.Temperature > 38 || input.Temperature < 36)
-                    score += 0.1m;
-            }
-
-            // Oxygen Saturation risk
-            if (input.OxygenSaturation.HasValue)
-            {
-                if (input.OxygenSaturation < 95)
-                    score += 0.2m;
-            }
-
-            // Symptoms risk (if any symptoms present)
-            if (!string.IsNullOrWhiteSpace(input.Symptoms))
-                score += 0.1m;
-
-            // Clamp between 0 and 1
-            return Math.Min(score, 1m);
-        }
-
-        private Etmen_Domain.Enums.RiskLevel GetRiskLevel(decimal score)
-        {
-            if (score < 0.25m)
-                return Etmen_Domain.Enums.RiskLevel.Low;
-            else if (score < 0.5m)
-                return Etmen_Domain.Enums.RiskLevel.Medium;
-            else if (score < 0.75m)
-                return Etmen_Domain.Enums.RiskLevel.High;
-            else
-                return Etmen_Domain.Enums.RiskLevel.Critical;
+            return Etmen_BLL.Helpers.ServiceResult<IEnumerable<RiskResultDto>>.Success(dtos);
         }
 
         private string GetBmiCategory(decimal bmi)

@@ -2,6 +2,8 @@ using Etmen_BLL.DTOs.Risk;
 using Etmen_BLL.Helpers;
 using Etmen_BLL.Repositories.IServices;
 using Etmen_DAL.Repositories.Interfaces;
+using Etmen_Domain.Entities;
+using Etmen_Domain.Enums;
 
 namespace Etmen_BLL.Repositories.Services
 {
@@ -14,24 +16,102 @@ namespace Etmen_BLL.Repositories.Services
             _uow = uow;
         }
 
-        public Task<ServiceResult<RiskResultDto>> CalculateRiskAsync(RiskInputDto dto)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<RiskResultDto>> CalculateRiskAsync(RiskInputDto dto)
         {
-            // TODO: Use RiskCalculatorHelper to compute score from dto inputs (BMI, age, symptoms, etc.),
-            //       determine RiskLevel from thresholds, build and return RiskResultDto.
-            throw new NotImplementedException();
+            try
+            {
+                if (dto == null)
+                    return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.Failure("Input data cannot be null");
+
+               
+                string? symptomsString = dto.Symptoms != null ? string.Join(", ", dto.Symptoms) : null;
+
+               
+                var calculation = RiskCalculatorHelper.Calculate(
+                    null, 
+                    null,
+                    null, 
+                    null, 
+                    null, 
+                    null, 
+                    symptomsString
+                );
+
+                var riskLevel = RiskCalculatorHelper.GetRiskLevel(calculation.Score);
+
+                var resultDto = new RiskResultDto
+                {
+                    RiskScore = calculation.Score,
+                    RiskLevel = riskLevel,
+                    RiskColor = RiskCalculatorHelper.GetRiskColor(riskLevel),
+                    RiskLabel = RiskCalculatorHelper.GetRiskLabel(riskLevel),
+                    IsEmergency = calculation.IsEmergency,
+                    TriggeredSymptoms = calculation.TriggeredFactors,
+                    Recommendations = RiskCalculatorHelper.GenerateRecommendations(riskLevel, calculation.TriggeredFactors),
+                    NearestEmergencyCenter = calculation.IsEmergency ? "Emergency Center" : null
+                };
+
+                return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.Success(resultDto);
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<RiskResultDto>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult<List<RiskResultDto>>> GetPatientRiskHistoryAsync(int patientProfileId)
+        public async Task<Etmen_BLL.Helpers.ServiceResult<List<RiskResultDto>>> GetPatientRiskHistoryAsync(int patientProfileId)
         {
-            // TODO: _uow.RiskAssessments.GetByPatientIdAsync(patientProfileId), map to RiskResultDto list.
-            throw new NotImplementedException();
+            try
+            {
+                var assessments = await _uow.RiskAssessments.GetByPatientIdAsync(patientProfileId);
+
+                if (assessments == null)
+                    return Etmen_BLL.Helpers.ServiceResult<List<RiskResultDto>>.NotFound("No history found");
+
+                var historyList = assessments.Select(r => new RiskResultDto
+                {
+                    RiskScore = r.RiskScore,
+                    RiskLevel = r.RiskLevel,
+                    RiskColor = RiskCalculatorHelper.GetRiskColor(r.RiskLevel),
+                    RiskLabel = RiskCalculatorHelper.GetRiskLabel(r.RiskLevel),
+                    IsEmergency = r.RiskLevel == RiskLevel.Emergency, 
+                    NearestEmergencyCenter = r.RiskLevel == RiskLevel.Emergency ? "Emergency Center" : null,
+                    Recommendations = RiskCalculatorHelper.GenerateRecommendations(r.RiskLevel, new List<string>()),
+                    TriggeredSymptoms = new List<string>()
+                }).ToList();
+
+                return Etmen_BLL.Helpers.ServiceResult<List<RiskResultDto>>.Success(historyList);
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult<List<RiskResultDto>>.Failure(ex.Message);
+            }
         }
 
-        public Task<ServiceResult> SaveRiskAssessmentAsync(int patientProfileId, RiskResultDto riskResult)
+        public async Task<Etmen_BLL.Helpers.ServiceResult> SaveRiskAssessmentAsync(int patientProfileId, RiskResultDto riskResult)
         {
-            // TODO: Map riskResult to RiskAssessment entity, set PatientProfileId,
-            //       AddAsync, CompleteAsync.
-            throw new NotImplementedException();
+            try
+            {
+                if (riskResult == null)
+                    return Etmen_BLL.Helpers.ServiceResult.Failure("Risk result is null");
+
+              
+                var entity = new RiskAssessment
+                {
+                    PatientProfileId = patientProfileId,
+                    RiskScore = riskResult.RiskScore,
+                    RiskLevel = riskResult.RiskLevel
+                };
+
+                await _uow.RiskAssessments.AddAsync(entity);
+                await _uow.CompleteAsync();
+
+                return Etmen_BLL.Helpers.ServiceResult.Success(201);
+            }
+            catch (Exception ex)
+            {
+                return Etmen_BLL.Helpers.ServiceResult.Failure(ex.Message);
+            }
         }
     }
 }

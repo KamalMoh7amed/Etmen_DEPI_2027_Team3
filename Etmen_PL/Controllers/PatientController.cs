@@ -1,10 +1,16 @@
 using Etmen_BLL.DTOs.Medical;
 using Etmen_BLL.DTOs.Patient;
 using Etmen_BLL.DTOs.Risk;
+using Etmen_BLL.DTOs.Lab; 
 using Etmen_BLL.Repositories.IServices;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Etmen_PL.Controllers
 {
@@ -31,12 +37,12 @@ namespace Etmen_PL.Controllers
             _nearbyService = nearbyService;
         }
 
-        private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        private string userId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
         // GET: /Patient/Dashboard
         public async Task<IActionResult> Dashboard()
         {
-            var result = await _patientService.GetDashboardAsync(UserId);
+            var result = await _patientService.GetDashboardAsync(userId);
             if (!result.IsSuccess)
             {
                 TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل لوحة التحكم.";
@@ -49,7 +55,7 @@ namespace Etmen_PL.Controllers
         // GET: /Patient/Profile
         public async Task<IActionResult> Profile()
         {
-            var result = await _patientService.GetProfileAsync(UserId);
+            var result = await _patientService.GetProfileAsync(userId);
             if (!result.IsSuccess)
             {
                 TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل الملف الشخصي.";
@@ -67,7 +73,7 @@ namespace Etmen_PL.Controllers
             if (!ModelState.IsValid)
                 return View(dto);
 
-            var result = await _patientService.UpdateProfileAsync(UserId, dto);
+            var result = await _patientService.UpdateProfileAsync(userId, dto);
             if (!result.IsSuccess)
             {
                 ModelState.AddModelError("", result.ErrorMessage ?? "فشل تحديث الملف الشخصي.");
@@ -78,10 +84,14 @@ namespace Etmen_PL.Controllers
             return RedirectToAction(nameof(Profile));
         }
 
+        // ────────────────────────────────────────────────────────
+        // MEDICAL RECORDS (تنفيذ السجلات الطبية)
+        // ────────────────────────────────────────────────────────
+
         // GET: /Patient/MedicalRecords
         public async Task<IActionResult> MedicalRecords()
         {
-            var result = await _patientService.GetMedicalRecordsAsync(UserId);
+            var result = await _patientService.GetMedicalRecordsAsync(userId);
             if (!result.IsSuccess)
             {
                 TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل في تحميل السجلات الطبية.";
@@ -99,7 +109,7 @@ namespace Etmen_PL.Controllers
             if (!ModelState.IsValid)
                 return RedirectToAction(nameof(MedicalRecords));
 
-            var result = await _patientService.AddMedicalRecordAsync(UserId, dto);
+            var result = await _patientService.AddMedicalRecordAsync(userId, dto);
             if (!result.IsSuccess)
             {
                 TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل إضافة السجل الطبي.";
@@ -109,6 +119,10 @@ namespace Etmen_PL.Controllers
             TempData["SuccessMessage"] = "تم إضافة السجل الطبي بنجاح.";
             return RedirectToAction(nameof(MedicalRecords));
         }
+
+        // ────────────────────────────────────────────────────────
+        // RISK ASSESSMENT (تنفيذ تقييم المخاطر)
+        // ────────────────────────────────────────────────────────
 
         // GET: /Patient/RiskAssessment
         public IActionResult RiskAssessment()
@@ -124,7 +138,7 @@ namespace Etmen_PL.Controllers
             if (!ModelState.IsValid)
                 return View(dto);
 
-            var result = await _patientService.AssessRiskAsync(UserId, dto);
+            var result = await _patientService.AssessRiskAsync(userId, dto);
             if (!result.IsSuccess)
             {
                 ModelState.AddModelError("", result.ErrorMessage ?? "فشل حساب المخاطر.");
@@ -138,7 +152,7 @@ namespace Etmen_PL.Controllers
         // GET: /Patient/RiskResult
         public async Task<IActionResult> RiskResult()
         {
-            var result = await _patientService.GetLatestRiskAssessmentAsync(UserId);
+            var result = await _patientService.GetLatestRiskAssessmentAsync(userId);
             if (!result.IsSuccess)
             {
                 TempData["ErrorMessage"] = "لا توجد تقييمات مخاطر سابقة.";
@@ -147,6 +161,63 @@ namespace Etmen_PL.Controllers
 
             return View(result.Data);
         }
+
+        public Task<IActionResult> LabResults(string userId)
+        {
+            return LabResults(userId);
+        }
+
+        // ────────────────────────────────────────────────────────
+        // LAB RESULTS 
+        // ────────────────────────────────────────────────────────
+
+        // GET: /Patient/LabResults
+        public async Task<IActionResult> LabResults(int userId)
+        {
+            var result = await _labService.GetPatientLabResultsAsync(userId);
+            if (!result.IsSuccess)
+            {
+                ViewBag.InfoMessage = result.ErrorMessage ?? "لا توجد تحاليل مسجلة حالياً.";
+                return View(new List<LabResultDto>());
+            }
+
+            return View(result.Data);
+        }
+
+        // POST: /Patient/UploadLabResult
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadLabResult(LabUploadDto dto, IFormFile labFile)
+        {
+            if (labFile == null || labFile.Length == 0)
+            {
+                TempData["ErrorMessage"] = "برجاء اختيار ملف التحليل (صورة أو PDF) أولاً.";
+                return RedirectToAction(nameof(LabResults));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "البيانات المدخلة غير صالحة.";
+                return RedirectToAction(nameof(LabResults));
+            }
+
+            dto.LabFile = labFile;
+
+            var result = await _labService.UploadLabResultAsync(dto);
+
+            if (!result.IsSuccess)
+            {
+                TempData["ErrorMessage"] = result.ErrorMessage ?? "فشل حفظ بيانات التحليل.";
+                return RedirectToAction(nameof(LabResults));
+            }
+
+            TempData["SuccessMessage"] = "تم رفع وحفظ التحليل بنجاح داخل السيرفر وجاري مراجعته.";
+            return RedirectToAction(nameof(LabResults));
+        }
+
+        // ────────────────────────────────────────────────────────
+        // APPOINTMENTS
+        // ────────────────────────────────────────────────────────
 
         // GET: /Patient/Appointments
         public async Task<IActionResult> Appointments()
